@@ -12,13 +12,17 @@
 
 # testing
 /coverage
+coverage
 
 # next.js
 /.next/
+/frontend/.next/
 /out/
+/frontend/out/
 
 # production
 /build
+/backend/dist
 
 # misc
 .DS_Store
@@ -39,3 +43,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+frontend/next-env.d.ts

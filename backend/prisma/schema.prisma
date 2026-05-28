@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum StockMovementType {
+  STOCK_IN
+  STOCK_OUT
+  RESERVE
+  RELEASE
+  TRANSFER
+  ADJUSTMENT
+  FULFILLMENT
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  RESERVED
+  FULFILLED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  PENDING
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+model Organization {
+  id             String          @id @default(uuid())
+  name           String
+  slug           String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  users          User[]
+  roles          Role[]
+  categories     Category[]
+  products       Product[]
+  warehouses     Warehouse[]
+  orders         Order[]
+  shipments      Shipment[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+}
+
+model User {
+  id             String          @id @default(uuid())
+  organizationId String
+  email          String          @unique
+  name           String
+  passwordHash   String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  userRoles      UserRole[]
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+
+  @@index([organizationId])
+}
+
+model Role {
+  id              String           @id @default(uuid())
+  organizationId  String
+  name            String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  key             String           @unique
+  description     String?
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Category {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  products       Product[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Product {
+  id             String          @id @default(uuid())
+  organizationId String
+  categoryId     String?
+  sku            String
+  name           String
+  description    String?
+  unit           String
+  price          Decimal         @default(0)
+  reorderLevel   Int             @default(0)
+  status         ProductStatus   @default(ACTIVE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  inventory      Inventory[]
+  orderItems     OrderItem[]
+  movements      StockMovement[]
+
+  @@unique([organizationId, sku])
+  @@index([organizationId])
+  @@index([categoryId])
+}
+
+model Warehouse {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  address        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  bins           WarehouseBin[]
+  movements      StockMovement[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+model WarehouseBin {
+  id          String      @id @default(uuid())
+  warehouseId String
+  code        String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  warehouse   Warehouse   @relation(fields: [warehouseId], references: [id])
+  inventory   Inventory[]
+
+  @@unique([warehouseId, code])
+  @@index([warehouseId])
+}
+
+model Inventory {
+  id        String       @id @default(uuid())
+  productId String
+  binId     String
+  quantity  Int          @default(0)
+  updatedAt DateTime     @updatedAt
+  bin       WarehouseBin @relation(fields: [binId], references: [id])
+  product   Product      @relation(fields: [productId], references: [id])
+
+  @@unique([productId, binId])
+  @@index([productId])
+  @@index([binId])
+}
+
+model StockMovement {
+  id             String            @id @default(uuid())
+  organizationId String
+  productId      String
+  warehouseId    String
+  type           StockMovementType
+  quantity       Int
+  reference      String?
+  createdAt      DateTime          @default(now())
+  product        Product           @relation(fields: [productId], references: [id])
+  warehouse      Warehouse         @relation(fields: [warehouseId], references: [id])
+
+  @@index([organizationId])
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model Order {
+  id             String       @id @default(uuid())
+  organizationId String
+  orderNumber    String
+  customerName   String
+  status         OrderStatus  @default(DRAFT)
+  totalAmount    Decimal      @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  items          OrderItem[]
+  shipments      Shipment[]
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal @default(0)
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Shipment {
+  id             String            @id @default(uuid())
+  organizationId String
+  orderId        String
+  carrier        String?
+  trackingNumber String?
+  status         ShipmentStatus    @default(PENDING)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  order          Order             @relation(fields: [orderId], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  trackingEvents TrackingHistory[]
+
+  @@index([organizationId])
+  @@index([orderId])
+  @@index([status])
+}
+
+model TrackingHistory {
+  id         String   @id @default(uuid())
+  shipmentId String
+  status     String
+  location   String?
+  note       String?
+  createdAt  DateTime @default(now())
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+
+  @@index([shipmentId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id             String       @id @default(uuid())
+  organizationId String
+  title          String
+  body           String
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
