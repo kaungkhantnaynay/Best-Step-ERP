@@ -33,17 +33,18 @@ Tech Stack:
 ## 3. Git Setup
 - [x] Initialize Git repository
 - [x] Create .gitignore
-- [ ] Create GitHub repository
-- [ ] Push initial commit
+- [x] Create GitHub repository
+- [x] Push initial commit
 
 ---
 
 # PHASE 2 — Database Design
 
 ## 1. Setup Supabase PostgreSQL
-- [ ] Create Supabase organization/project
-- [ ] Create development database on Supabase
-- [ ] Configure Supabase database connection
+- [x] Create Supabase organization/project
+- [x] Create development database on Supabase
+- [x] Configure Supabase database connection
+- [x] Connect Supabase MCP to Best-Step-ERP project
 - [x] Add Supabase database URLs to backend .env.example placeholders
 - [ ] Decide direct vs pooled Supabase database URLs for migrations and runtime
 - [ ] Run Supabase security and performance advisors before production launch
@@ -133,6 +134,17 @@ Tech Stack:
 ---
 
 # PHASE 5 — Product Module
+
+## Public Frontend
+- [x] Install Recharts
+- [x] Install Lucide React
+- [x] Initialize ShadCN UI
+- [x] Create public landing page
+- [x] Create pricing page
+- [x] Create login page UI
+- [x] Create register page UI
+- [x] Create shared public layout components
+- [x] Add public marketing content and pricing content
 
 ## Features
 - [ ] Create product

@@ -29,11 +29,13 @@
 
 ## Frontend Design Theme Rules
 
-- Build the product UI around warm parchment creams (`#F5EFE0`), rust terracotta (`#B85C38`), olive green, dusty umber browns, and muted sky blue.
-- Do not use cold grays or modern blues in the interface palette.
+- Use a bright, simple, NotebookLM-inspired interface palette with white/off-white surfaces, crisp dark text, soft neutral borders, and one dependable primary accent.
+- Do not use vintage palettes, brown/terracotta themes, heavy gradients, or dark hero panels as the main visual direction.
 - Use the theme through Tailwind tokens, CSS variables, or ShadCN theme configuration rather than scattering one-off color values through components.
-- Keep ERP screens dense, scannable, and operational while using the warm palette for surfaces, borders, status accents, charts, and navigation states.
-- Preserve accessible contrast for text, controls, badges, charts, focus rings, and disabled states within the approved palette.
+- Public/pre-auth pages should feel spacious, centered, product-led, and direct, inspired by NotebookLM's clarity without copying Google branding or content.
+- Logged-in ERP screens should stay dense, scannable, and operational with tables, filters, status badges, timelines, side navigation, and dashboards.
+- Keep motion restrained and useful: subtle reveals and clear hover/focus states over decorative animation.
+- Preserve accessible contrast for text, controls, badges, charts, focus rings, and disabled states within the approved theme.
 
 ## Backend Rules
 
