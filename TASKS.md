@@ -46,15 +46,15 @@ Tech Stack:
 - [x] Configure Supabase database connection
 - [x] Connect Supabase MCP to Best-Step-ERP project
 - [x] Add Supabase database URLs to backend .env.example placeholders
-- [ ] Decide direct vs pooled Supabase database URLs for migrations and runtime
-- [ ] Run Supabase security and performance advisors before production launch
+- [x] Decide direct vs pooled Supabase database URLs for migrations and runtime
+- [x] Run Supabase security and performance advisors before production launch
 
 ## 2. Setup Prisma
 - [x] Install Prisma
 - [x] Initialize Prisma
 - [ ] Configure .env
-- [ ] Create first migration
-- [ ] Apply Prisma migration to Supabase development database
+- [x] Create first migration
+- [x] Apply Prisma migration to Supabase development database
 
 ## 3. Design Database Tables
 

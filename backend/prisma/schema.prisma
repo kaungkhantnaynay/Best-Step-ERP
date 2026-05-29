@@ -38,31 +38,32 @@ enum ShipmentStatus {
 }
 
 model Organization {
-  id             String          @id @default(uuid())
-  name           String
-  slug           String          @unique
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  users          User[]
-  roles          Role[]
-  categories     Category[]
-  products       Product[]
-  warehouses     Warehouse[]
-  orders         Order[]
-  shipments      Shipment[]
-  notifications  Notification[]
-  auditLogs      AuditLog[]
+  id            String         @id @default(uuid())
+  name          String
+  slug          String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  users         User[]
+  roles         Role[]
+  refreshTokens RefreshToken[]
+  categories    Category[]
+  products      Product[]
+  warehouses    Warehouse[]
+  orders        Order[]
+  shipments     Shipment[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
 }
 
 model User {
-  id             String          @id @default(uuid())
+  id             String         @id @default(uuid())
   organizationId String
-  email          String          @unique
+  email          String         @unique
   name           String
   passwordHash   String
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  organization   Organization    @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id])
   userRoles      UserRole[]
   refreshTokens  RefreshToken[]
   auditLogs      AuditLog[]
@@ -98,6 +99,7 @@ model UserRole {
   user   User   @relation(fields: [userId], references: [id])
 
   @@id([userId, roleId])
+  @@index([roleId])
 }
 
 model RolePermission {
@@ -107,18 +109,34 @@ model RolePermission {
   role         Role       @relation(fields: [roleId], references: [id])
 
   @@id([roleId, permissionId])
+  @@index([permissionId])
 }
 
 model RefreshToken {
-  id        String    @id @default(uuid())
-  userId    String
-  tokenHash String
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id])
+  id                String         @id @default(uuid())
+  organizationId    String
+  userId            String
+  familyId          String
+  tokenHash         String         @unique
+  replacedByTokenId String?
+  userAgent         String?
+  ipAddressHash     String?
+  lastUsedAt        DateTime?
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  revokedReason     String?
+  createdAt         DateTime       @default(now())
+  organization      Organization   @relation(fields: [organizationId], references: [id])
+  replacedByToken   RefreshToken?  @relation("RefreshTokenReplacement", fields: [replacedByTokenId], references: [id])
+  replacementFor    RefreshToken[] @relation("RefreshTokenReplacement")
+  user              User           @relation(fields: [userId], references: [id])
 
+  @@index([organizationId])
   @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@index([replacedByTokenId])
 }
 
 model Category {
