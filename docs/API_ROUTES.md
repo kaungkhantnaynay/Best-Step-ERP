@@ -10,11 +10,19 @@ Base path: `/api/v1`
 
 ## Auth
 
-- `POST /auth/register`: create organization owner or invited user.
+- `POST /auth/register`: create organization owner.
 - `POST /auth/login`: authenticate user.
 - `POST /auth/refresh`: rotate refresh token and issue a new access token.
 - `POST /auth/logout`: revoke refresh token.
+- `POST /auth/logout-all`: revoke all refresh tokens for the authenticated user.
 - `GET /auth/me`: return authenticated user, organization, roles, and permissions.
+
+Auth rate limits:
+
+- `POST /auth/register`: `AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_MS`.
+- `POST /auth/login`: `AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_MS`.
+- `POST /auth/refresh`: `AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_MS`.
+- Auth rate limit errors return `429 RATE_LIMITED` with `details.retryAfter`.
 
 ## Products and Categories
 

@@ -119,17 +119,23 @@ Tech Stack:
 # PHASE 4 — Authentication System
 
 ## 1. User Authentication
-- [ ] Register API
-- [ ] Login API
-- [ ] JWT generation
-- [ ] Password hashing
-- [ ] Refresh token support
+- [x] Register API
+- [x] Login API
+- [x] JWT generation
+- [x] Password hashing
+- [x] Refresh token support
 
 ## 2. Role-Based Access Control
-- [ ] Create roles
-- [ ] Create permissions
+- [x] Create roles
+- [x] Create permissions
 - [ ] Protect routes
 - [ ] Restrict admin routes
+
+## 3. Auth Validation, Rate Limits, and Docs
+- [x] Validate register and login payloads
+- [x] Rate-limit register, login, and refresh endpoints
+- [x] Document auth request/response shapes in Swagger/OpenAPI
+- [x] Add auth service, controller, validator, RBAC, and rate-limit tests
 
 ---
 

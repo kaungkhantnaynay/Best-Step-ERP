@@ -1,66 +1,25 @@
 import { PrismaClient } from "@prisma/client";
+import {
+  createDefaultRolesForOrganization,
+  upsertPermissionCatalog,
+} from "../src/services/rbac.service.js";
 
 const prisma = new PrismaClient();
 
-const permissions = [
-  ["auth.me", "Read the current authenticated user context"],
-  ["users.manage", "Manage organization users and invitations"],
-  ["roles.manage", "Manage organization roles and permissions"],
-  ["products.read", "Read products and categories"],
-  ["products.write", "Create and update products and categories"],
-  ["products.delete", "Archive or delete products"],
-  ["warehouses.read", "Read warehouses and bins"],
-  ["warehouses.write", "Create and update warehouses and bins"],
-  ["inventory.read", "Read inventory and stock movements"],
-  ["inventory.write", "Create stock in, stock out, adjustment, and transfer records"],
-  ["orders.read", "Read orders and order details"],
-  ["orders.write", "Create orders and update order status"],
-  ["shipments.read", "Read shipments and tracking history"],
-  ["shipments.write", "Create shipments and update shipment status"],
-  ["analytics.read", "Read dashboard and analytics data"],
-  ["notifications.read", "Read in-app notifications"],
-  ["notifications.write", "Update notification state"],
-  ["audit.read", "Read audit log entries"],
-] as const;
-
-export const defaultRoleTemplates = {
-  owner: permissions.map(([key]) => key),
-  admin: permissions.map(([key]) => key).filter((key) => key !== "audit.read"),
-  manager: [
-    "auth.me",
-    "products.read",
-    "products.write",
-    "warehouses.read",
-    "warehouses.write",
-    "inventory.read",
-    "inventory.write",
-    "orders.read",
-    "orders.write",
-    "shipments.read",
-    "shipments.write",
-    "analytics.read",
-    "notifications.read",
-    "notifications.write",
-  ],
-  staff: [
-    "auth.me",
-    "products.read",
-    "warehouses.read",
-    "inventory.read",
-    "orders.read",
-    "shipments.read",
-    "notifications.read",
-  ],
-} as const;
-
 async function main() {
-  for (const [key, description] of permissions) {
-    await prisma.permission.upsert({
-      where: { key },
-      update: { description },
-      create: { key, description },
+  await prisma.$transaction(async (tx) => {
+    await upsertPermissionCatalog(tx);
+
+    const organizations = await tx.organization.findMany({
+      select: {
+        id: true,
+      },
     });
-  }
+
+    for (const organization of organizations) {
+      await createDefaultRolesForOrganization(tx, organization.id);
+    }
+  });
 }
 
 main()

@@ -10,3 +10,11 @@ export type AccessTokenPayload = {
   organizationId: string;
   type: "access";
 };
+
+export type RefreshTokenPayload = {
+  sub: string;
+  organizationId: string;
+  familyId: string;
+  jti: string;
+  type: "refresh";
+};
