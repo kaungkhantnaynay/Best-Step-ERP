@@ -109,9 +109,9 @@ Tech Stack:
 
 ## 3. Essential Middlewares
 - [x] Error handling middleware
-- [ ] Auth middleware
-- [ ] RBAC middleware
-- [ ] Request validation middleware
+- [x] Auth middleware
+- [x] RBAC middleware
+- [x] Request validation middleware
 - [x] Logging middleware
 
 ---
