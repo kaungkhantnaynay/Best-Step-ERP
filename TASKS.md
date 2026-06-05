@@ -153,13 +153,13 @@ Tech Stack:
 - [x] Add public marketing content and pricing content
 
 ## Features
-- [ ] Create product
-- [ ] Update product
-- [ ] Delete product
-- [ ] Product list API
-- [ ] Product details API
-- [ ] SKU generation
-- [ ] Category management
+- [x] Create product
+- [x] Update product
+- [x] Delete product
+- [x] Product list API
+- [x] Product details API
+- [x] SKU generation
+- [x] Category management
 
 ## Frontend
 - [x] Product table
@@ -167,6 +167,7 @@ Tech Stack:
 - [x] Product search
 - [x] Product filters
 - [x] Pagination
+- [x] Product API wiring
 
 ---
 

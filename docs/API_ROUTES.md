@@ -26,13 +26,13 @@ Auth rate limits:
 
 ## Products and Categories
 
-- `GET /products`: list products with search, filters, and pagination.
-- `POST /products`: create product.
-- `GET /products/:id`: get product details.
-- `PATCH /products/:id`: update product.
-- `DELETE /products/:id`: delete or archive product.
-- `GET /categories`: list categories.
-- `POST /categories`: create category.
+- `GET /products`: list tenant-scoped products with search, status, category, low-stock filters, and page pagination.
+- `POST /products`: create tenant-scoped product; SKU may be provided or generated.
+- `GET /products/:id`: get tenant-scoped product details with category, stock, value, and location summary.
+- `PATCH /products/:id`: update tenant-scoped product.
+- `DELETE /products/:id`: archive tenant-scoped product by setting `status=ARCHIVED`.
+- `GET /categories`: list tenant-scoped categories.
+- `POST /categories`: create tenant-scoped category.
 
 ## Warehouses and Inventory
 

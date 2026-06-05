@@ -116,6 +116,104 @@ export const openApiDocument = {
           },
         },
       },
+      PaginationMeta: {
+        type: "object",
+        required: ["page", "limit", "total", "totalPages"],
+        properties: {
+          page: { type: "integer", minimum: 1 },
+          limit: { type: "integer", minimum: 1, maximum: 100 },
+          total: { type: "integer", minimum: 0 },
+          totalPages: { type: "integer", minimum: 0 },
+        },
+      },
+      Product: {
+        type: "object",
+        required: ["id", "sku", "name", "unit", "price", "reorderLevel", "status", "stockQuantity", "stockStatus", "inventoryValue", "locationSummary", "createdAt", "updatedAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          sku: { type: "string" },
+          name: { type: "string" },
+          description: { type: "string", nullable: true },
+          unit: { type: "string" },
+          price: { type: "number", minimum: 0 },
+          reorderLevel: { type: "integer", minimum: 0 },
+          status: { type: "string", enum: ["ACTIVE", "ARCHIVED"] },
+          category: {
+            nullable: true,
+            type: "object",
+            properties: {
+              id: { type: "string", format: "uuid" },
+              name: { type: "string" },
+            },
+          },
+          stockQuantity: { type: "integer", minimum: 0 },
+          stockStatus: { type: "string", enum: ["Active", "Low stock", "Archived"] },
+          inventoryValue: { type: "number", minimum: 0 },
+          locationSummary: { type: "string" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ProductRequest: {
+        type: "object",
+        required: ["name", "unit", "price", "reorderLevel"],
+        properties: {
+          name: { type: "string", minLength: 2, maxLength: 160 },
+          sku: { type: "string", minLength: 3, maxLength: 64 },
+          description: { type: "string", nullable: true, maxLength: 1000 },
+          categoryId: { type: "string", format: "uuid", nullable: true },
+          unit: { type: "string", minLength: 1, maxLength: 40 },
+          price: { type: "number", minimum: 0 },
+          reorderLevel: { type: "integer", minimum: 0 },
+          status: { type: "string", enum: ["ACTIVE", "ARCHIVED"] },
+        },
+      },
+      ProductListResponse: {
+        type: "object",
+        required: ["data", "pagination"],
+        properties: {
+          data: { type: "array", items: { $ref: "#/components/schemas/Product" } },
+          pagination: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+      },
+      ProductResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { $ref: "#/components/schemas/Product" },
+        },
+      },
+      Category: {
+        type: "object",
+        required: ["id", "name", "createdAt", "updatedAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      CategoryRequest: {
+        type: "object",
+        required: ["name"],
+        properties: {
+          name: { type: "string", minLength: 2, maxLength: 120 },
+        },
+      },
+      CategoryListResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { type: "array", items: { $ref: "#/components/schemas/Category" } },
+        },
+      },
+      CategoryResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { $ref: "#/components/schemas/Category" },
+        },
+      },
       ErrorResponse: {
         type: "object",
         required: ["error"],
@@ -402,6 +500,116 @@ export const openApiDocument = {
               },
             },
           },
+        },
+      },
+    },
+    "/api/v1/products": {
+      get: {
+        summary: "List products",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "search", in: "query", schema: { type: "string" } },
+          { name: "status", in: "query", schema: { type: "string", enum: ["ACTIVE", "ARCHIVED"] } },
+          { name: "categoryId", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "lowStock", in: "query", schema: { type: "boolean" } },
+        ],
+        responses: {
+          "200": {
+            description: "Tenant-scoped product list",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ProductListResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "products.read permission required" },
+        },
+      },
+      post: {
+        summary: "Create product",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/ProductRequest" } } },
+        },
+        responses: {
+          "201": {
+            description: "Product created",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ProductResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "products.write permission required" },
+          "409": { description: "SKU already exists" },
+        },
+      },
+    },
+    "/api/v1/products/{id}": {
+      get: {
+        summary: "Get product",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Product detail",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ProductResponse" } } },
+          },
+          "404": { description: "Product not found" },
+        },
+      },
+      patch: {
+        summary: "Update product",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/ProductRequest" } } },
+        },
+        responses: {
+          "200": {
+            description: "Product updated",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ProductResponse" } } },
+          },
+          "404": { description: "Product not found" },
+          "409": { description: "SKU already exists" },
+        },
+      },
+      delete: {
+        summary: "Archive product",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Product archived",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ProductResponse" } } },
+          },
+          "404": { description: "Product not found" },
+        },
+      },
+    },
+    "/api/v1/categories": {
+      get: {
+        summary: "List categories",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Tenant-scoped category list",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/CategoryListResponse" } } },
+          },
+        },
+      },
+      post: {
+        summary: "Create category",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/CategoryRequest" } } },
+        },
+        responses: {
+          "201": {
+            description: "Category created",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/CategoryResponse" } } },
+          },
+          "409": { description: "Category already exists" },
         },
       },
     },
