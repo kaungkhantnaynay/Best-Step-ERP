@@ -401,6 +401,85 @@ export const openApiDocument = {
           pagination: { $ref: "#/components/schemas/PaginationMeta" },
         },
       },
+      OrderItem: {
+        type: "object",
+        required: ["id", "product", "quantity", "unitPrice", "lineTotal"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          product: {
+            type: "object",
+            required: ["id", "sku", "name", "unit"],
+            properties: {
+              id: { type: "string", format: "uuid" },
+              sku: { type: "string" },
+              name: { type: "string" },
+              unit: { type: "string" },
+            },
+          },
+          quantity: { type: "integer", minimum: 1 },
+          unitPrice: { type: "number", minimum: 0 },
+          lineTotal: { type: "number", minimum: 0 },
+        },
+      },
+      Order: {
+        type: "object",
+        required: ["id", "orderNumber", "customerName", "status", "totalAmount", "items", "shipments", "createdAt", "updatedAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          orderNumber: { type: "string" },
+          customerName: { type: "string" },
+          status: { type: "string", enum: ["DRAFT", "CONFIRMED", "RESERVED", "FULFILLED", "CANCELLED"] },
+          totalAmount: { type: "number", minimum: 0 },
+          items: { type: "array", items: { $ref: "#/components/schemas/OrderItem" } },
+          shipments: { type: "array", items: { type: "object" } },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      OrderRequest: {
+        type: "object",
+        required: ["orderNumber", "customerName", "items"],
+        properties: {
+          orderNumber: { type: "string", minLength: 2, maxLength: 64 },
+          customerName: { type: "string", minLength: 2, maxLength: 160 },
+          items: {
+            type: "array",
+            minItems: 1,
+            maxItems: 100,
+            items: {
+              type: "object",
+              required: ["productId", "quantity"],
+              properties: {
+                productId: { type: "string", format: "uuid" },
+                quantity: { type: "integer", minimum: 1 },
+                unitPrice: { type: "number", minimum: 0 },
+              },
+            },
+          },
+        },
+      },
+      OrderStatusUpdateRequest: {
+        type: "object",
+        required: ["status"],
+        properties: {
+          status: { type: "string", enum: ["CONFIRMED", "RESERVED", "FULFILLED"] },
+        },
+      },
+      OrderListResponse: {
+        type: "object",
+        required: ["data", "pagination"],
+        properties: {
+          data: { type: "array", items: { $ref: "#/components/schemas/Order" } },
+          pagination: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+      },
+      OrderResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { $ref: "#/components/schemas/Order" },
+        },
+      },
       ErrorResponse: {
         type: "object",
         required: ["error"],
@@ -936,6 +1015,104 @@ export const openApiDocument = {
           "403": { description: "inventory.write permission required" },
           "404": { description: "Product or warehouse bin not found" },
           "409": { description: "Insufficient stock" },
+        },
+      },
+    },
+    "/api/v1/orders": {
+      get: {
+        summary: "List orders",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          {
+            name: "status",
+            in: "query",
+            schema: { type: "string", enum: ["DRAFT", "CONFIRMED", "RESERVED", "FULFILLED", "CANCELLED"] },
+          },
+          { name: "search", in: "query", schema: { type: "string", maxLength: 120 } },
+        ],
+        responses: {
+          "200": {
+            description: "Tenant-scoped order list",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/OrderListResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "orders.read permission required" },
+        },
+      },
+      post: {
+        summary: "Create order and reserve inventory",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/OrderRequest" } } },
+        },
+        responses: {
+          "201": {
+            description: "Order created and inventory reserved",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/OrderResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "orders.write permission required" },
+          "404": { description: "Product not found" },
+          "409": { description: "Insufficient stock or duplicate order number" },
+        },
+      },
+    },
+    "/api/v1/orders/{id}": {
+      get: {
+        summary: "Get order details",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Tenant-scoped order details",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/OrderResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "orders.read permission required" },
+          "404": { description: "Order not found" },
+        },
+      },
+    },
+    "/api/v1/orders/{id}/status": {
+      patch: {
+        summary: "Update order status",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/OrderStatusUpdateRequest" } } },
+        },
+        responses: {
+          "200": {
+            description: "Order status updated",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/OrderResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "orders.write permission required" },
+          "404": { description: "Order not found" },
+          "409": { description: "Invalid transition or insufficient stock" },
+        },
+      },
+    },
+    "/api/v1/orders/{id}/cancel": {
+      post: {
+        summary: "Cancel order and release reserved inventory",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Order cancelled",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/OrderResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "orders.write permission required" },
+          "404": { description: "Order not found" },
+          "409": { description: "Invalid transition or release target missing" },
         },
       },
     },

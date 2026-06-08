@@ -48,11 +48,11 @@ Auth rate limits:
 
 ## Orders
 
-- `GET /orders`: list orders.
-- `POST /orders`: create order and reserve inventory.
-- `GET /orders/:id`: get order details.
-- `PATCH /orders/:id/status`: update order status.
-- `POST /orders/:id/cancel`: cancel order and release reserved inventory.
+- `GET /orders`: list tenant-scoped orders with `page`, `limit`, `status`, and `search` filters. Requires `orders.read`.
+- `POST /orders`: create an order, reserve inventory in a transaction, and record reservation movements. Requires `orders.write`.
+- `GET /orders/:id`: get tenant-scoped order details with items and shipments. Requires `orders.read`.
+- `PATCH /orders/:id/status`: update order status through allowed workflow transitions. Requires `orders.write`.
+- `POST /orders/:id/cancel`: cancel an order and release reserved inventory in a transaction. Requires `orders.write`.
 
 ## Shipments
 

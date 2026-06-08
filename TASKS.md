@@ -206,11 +206,11 @@ Tech Stack:
 # PHASE 8 — Order Module
 
 ## Features
-- [ ] Create order
-- [ ] Update order status
-- [ ] Reserve inventory
-- [ ] Cancel order
-- [ ] Order history
+- [x] Create order
+- [x] Update order status
+- [x] Reserve inventory
+- [x] Cancel order
+- [x] Order history
 
 ## Frontend
 - [x] Order table
