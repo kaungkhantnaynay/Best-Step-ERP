@@ -56,12 +56,12 @@ Auth rate limits:
 
 ## Shipments
 
-- `GET /shipments`: list shipments.
-- `POST /shipments`: create shipment for an order.
-- `GET /shipments/:id`: get shipment details.
-- `PATCH /shipments/:id/assign`: assign carrier or handler.
-- `PATCH /shipments/:id/status`: update shipment status.
-- `POST /shipments/:id/tracking-events`: append tracking history.
+- `GET /shipments`: list tenant-scoped shipments with `page`, `limit`, `status`, `orderId`, and `search` filters. Requires `shipments.read`.
+- `POST /shipments`: create a shipment for a tenant order and append the initial tracking event. Requires `shipments.write`.
+- `GET /shipments/:id`: get tenant-scoped shipment details with order summary and tracking timeline. Requires `shipments.read`.
+- `PATCH /shipments/:id/assign`: assign carrier and tracking number. Requires `shipments.write`.
+- `PATCH /shipments/:id/status`: update shipment status through allowed workflow transitions and append history. Requires `shipments.write`.
+- `POST /shipments/:id/tracking-events`: append tracking history and create a shipment notification record. Requires `shipments.write`.
 
 ## Analytics, Notifications, and Audit
 

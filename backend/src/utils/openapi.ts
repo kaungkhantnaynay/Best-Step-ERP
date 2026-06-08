@@ -480,6 +480,91 @@ export const openApiDocument = {
           data: { $ref: "#/components/schemas/Order" },
         },
       },
+      TrackingEvent: {
+        type: "object",
+        required: ["id", "status", "createdAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          status: { type: "string" },
+          location: { type: "string", nullable: true },
+          note: { type: "string", nullable: true },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      Shipment: {
+        type: "object",
+        required: ["id", "order", "status", "trackingEvents", "createdAt", "updatedAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          order: {
+            type: "object",
+            required: ["id", "orderNumber", "customerName", "status", "totalAmount"],
+            properties: {
+              id: { type: "string", format: "uuid" },
+              orderNumber: { type: "string" },
+              customerName: { type: "string" },
+              status: { type: "string", enum: ["DRAFT", "CONFIRMED", "RESERVED", "FULFILLED", "CANCELLED"] },
+              totalAmount: { type: "number", minimum: 0 },
+            },
+          },
+          carrier: { type: "string", nullable: true },
+          trackingNumber: { type: "string", nullable: true },
+          status: { type: "string", enum: ["PENDING", "ASSIGNED", "IN_TRANSIT", "DELIVERED", "CANCELLED"] },
+          trackingEvents: { type: "array", items: { $ref: "#/components/schemas/TrackingEvent" } },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ShipmentRequest: {
+        type: "object",
+        required: ["orderId"],
+        properties: {
+          orderId: { type: "string", format: "uuid" },
+          carrier: { type: "string", nullable: true, maxLength: 120 },
+          trackingNumber: { type: "string", nullable: true, maxLength: 120 },
+        },
+      },
+      ShipmentAssignRequest: {
+        type: "object",
+        required: ["carrier"],
+        properties: {
+          carrier: { type: "string", minLength: 2, maxLength: 120 },
+          trackingNumber: { type: "string", nullable: true, maxLength: 120 },
+        },
+      },
+      ShipmentStatusUpdateRequest: {
+        type: "object",
+        required: ["status"],
+        properties: {
+          status: { type: "string", enum: ["ASSIGNED", "IN_TRANSIT", "DELIVERED", "CANCELLED"] },
+          location: { type: "string", nullable: true, maxLength: 160 },
+          note: { type: "string", nullable: true, maxLength: 500 },
+        },
+      },
+      TrackingEventRequest: {
+        type: "object",
+        required: ["status"],
+        properties: {
+          status: { type: "string", minLength: 2, maxLength: 80 },
+          location: { type: "string", nullable: true, maxLength: 160 },
+          note: { type: "string", nullable: true, maxLength: 500 },
+        },
+      },
+      ShipmentListResponse: {
+        type: "object",
+        required: ["data", "pagination"],
+        properties: {
+          data: { type: "array", items: { $ref: "#/components/schemas/Shipment" } },
+          pagination: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+      },
+      ShipmentResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { $ref: "#/components/schemas/Shipment" },
+        },
+      },
       ErrorResponse: {
         type: "object",
         required: ["error"],
@@ -1113,6 +1198,131 @@ export const openApiDocument = {
           "403": { description: "orders.write permission required" },
           "404": { description: "Order not found" },
           "409": { description: "Invalid transition or release target missing" },
+        },
+      },
+    },
+    "/api/v1/shipments": {
+      get: {
+        summary: "List shipments",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          {
+            name: "status",
+            in: "query",
+            schema: { type: "string", enum: ["PENDING", "ASSIGNED", "IN_TRANSIT", "DELIVERED", "CANCELLED"] },
+          },
+          { name: "orderId", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "search", in: "query", schema: { type: "string", maxLength: 120 } },
+        ],
+        responses: {
+          "200": {
+            description: "Tenant-scoped shipment list",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentListResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "shipments.read permission required" },
+        },
+      },
+      post: {
+        summary: "Create shipment",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentRequest" } } },
+        },
+        responses: {
+          "201": {
+            description: "Shipment created",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "shipments.write permission required" },
+          "404": { description: "Order not found" },
+          "409": { description: "Order cannot be shipped" },
+        },
+      },
+    },
+    "/api/v1/shipments/{id}": {
+      get: {
+        summary: "Get shipment details",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Tenant-scoped shipment details",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "shipments.read permission required" },
+          "404": { description: "Shipment not found" },
+        },
+      },
+    },
+    "/api/v1/shipments/{id}/assign": {
+      patch: {
+        summary: "Assign shipment",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentAssignRequest" } } },
+        },
+        responses: {
+          "200": {
+            description: "Shipment assigned",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "shipments.write permission required" },
+          "404": { description: "Shipment not found" },
+          "409": { description: "Shipment is closed" },
+        },
+      },
+    },
+    "/api/v1/shipments/{id}/status": {
+      patch: {
+        summary: "Update shipment status",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentStatusUpdateRequest" } } },
+        },
+        responses: {
+          "200": {
+            description: "Shipment status updated",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "shipments.write permission required" },
+          "404": { description: "Shipment not found" },
+          "409": { description: "Invalid shipment transition" },
+        },
+      },
+    },
+    "/api/v1/shipments/{id}/tracking-events": {
+      post: {
+        summary: "Append tracking event",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/TrackingEventRequest" } } },
+        },
+        responses: {
+          "201": {
+            description: "Tracking event appended",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ShipmentResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "shipments.write permission required" },
+          "404": { description: "Shipment not found" },
         },
       },
     },

@@ -222,11 +222,11 @@ Tech Stack:
 # PHASE 9 — Shipment Module
 
 ## Features
-- [ ] Create shipment
-- [ ] Assign shipment
-- [ ] Shipment tracking
-- [ ] Delivery updates
-- [ ] Shipment history
+- [x] Create shipment
+- [x] Assign shipment
+- [x] Shipment tracking
+- [x] Delivery updates
+- [x] Shipment history
 
 ## Frontend
 - [x] Shipment dashboard
