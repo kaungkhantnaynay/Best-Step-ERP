@@ -36,15 +36,15 @@ Auth rate limits:
 
 ## Warehouses and Inventory
 
-- `GET /warehouses`: list warehouses.
+- `GET /warehouses`: list tenant-scoped warehouses with search and page pagination.
 - `POST /warehouses`: create warehouse.
 - `GET /warehouses/:id`: get warehouse details.
 - `POST /warehouses/:id/bins`: create warehouse bin.
-- `GET /inventory`: list inventory by product, warehouse, bin, and low-stock state.
-- `POST /inventory/stock-in`: add stock.
-- `POST /inventory/stock-out`: remove stock.
+- `GET /inventory`: list tenant-scoped inventory by product, warehouse, bin, search, and low-stock state with page pagination.
+- `POST /inventory/stock-in`: add stock and record a stock movement.
+- `POST /inventory/stock-out`: remove stock, reject insufficient stock, record a stock movement, and create low-stock notifications when thresholds are crossed.
 - `POST /inventory/transfer`: transfer stock between warehouses or bins.
-- `GET /stock-movements`: list movement history.
+- `GET /stock-movements`: list tenant-scoped movement history by product, warehouse, and movement type with page pagination.
 
 ## Orders
 

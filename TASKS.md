@@ -174,10 +174,10 @@ Tech Stack:
 # PHASE 6 — Warehouse Module
 
 ## Features
-- [ ] Create warehouse
-- [ ] Warehouse list
-- [ ] Warehouse details
-- [ ] Bin location management
+- [x] Create warehouse
+- [x] Warehouse list
+- [x] Warehouse details
+- [x] Bin location management
 - [ ] Warehouse transfers
 
 ## Frontend
@@ -190,11 +190,11 @@ Tech Stack:
 # PHASE 7 — Inventory Module
 
 ## Features
-- [ ] Add stock
-- [ ] Remove stock
-- [ ] Stock movement history
-- [ ] Low stock alerts
-- [ ] Inventory valuation
+- [x] Add stock
+- [x] Remove stock
+- [x] Stock movement history
+- [x] Low stock alerts
+- [x] Inventory valuation
 
 ## Frontend
 - [x] Inventory table
