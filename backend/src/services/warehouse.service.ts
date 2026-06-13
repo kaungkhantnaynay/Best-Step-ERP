@@ -1,11 +1,13 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, ProductStatus, StockMovementType } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
+import { recordAuditLog } from "./audit.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
   WarehouseBinCreateInput,
   WarehouseCreateInput,
   WarehouseListQuery,
+  WarehouseTransferInput,
 } from "../validators/warehouse.validators.js";
 
 const includeWarehouseRelations = {
@@ -19,6 +21,10 @@ const includeWarehouseRelations = {
 
 type WarehouseRecord = Prisma.WarehouseGetPayload<{ include: typeof includeWarehouseRelations }>;
 type WarehouseBinRecord = WarehouseRecord["bins"][number];
+type WarehouseTransaction = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
@@ -27,6 +33,12 @@ function isUniqueConstraintError(error: unknown) {
 function normalizeOptionalText(value?: string | null) {
   if (value === undefined) return undefined;
   if (value === null || value.trim() === "") return null;
+
+  return value.trim();
+}
+
+function normalizeReference(value?: string | null) {
+  if (value === undefined || value === null || value.trim() === "") return null;
 
   return value.trim();
 }
@@ -116,7 +128,7 @@ export async function getWarehouse(organizationId: string, id: string) {
   return toWarehouseResponse(await getWarehouseRecord(organizationId, id));
 }
 
-export async function createWarehouse(organizationId: string, input: WarehouseCreateInput) {
+export async function createWarehouse(organizationId: string, input: WarehouseCreateInput, userId?: string) {
   try {
     const warehouse = await prisma.warehouse.create({
       data: {
@@ -126,6 +138,14 @@ export async function createWarehouse(organizationId: string, input: WarehouseCr
         address: normalizeOptionalText(input.address),
       },
       include: includeWarehouseRelations,
+    });
+    await recordAuditLog({
+      organizationId,
+      userId,
+      action: "warehouse.create",
+      entityType: "Warehouse",
+      entityId: warehouse.id,
+      metadata: { code: warehouse.code, name: warehouse.name },
     });
 
     return toWarehouseResponse(warehouse);
@@ -142,6 +162,7 @@ export async function createWarehouseBin(
   organizationId: string,
   warehouseId: string,
   input: WarehouseBinCreateInput,
+  userId?: string,
 ) {
   await getWarehouseRecord(organizationId, warehouseId);
 
@@ -155,6 +176,14 @@ export async function createWarehouseBin(
         inventory: true,
       },
     });
+    await recordAuditLog({
+      organizationId,
+      userId,
+      action: "warehouse_bin.create",
+      entityType: "WarehouseBin",
+      entityId: bin.id,
+      metadata: { warehouseId, code: bin.code },
+    });
 
     return toWarehouseBinResponse(bin);
   } catch (error) {
@@ -164,4 +193,128 @@ export async function createWarehouseBin(
 
     throw error;
   }
+}
+
+async function getTenantTransferBin(tx: WarehouseTransaction, organizationId: string, binId: string) {
+  const bin = await tx.warehouseBin.findFirst({
+    where: { id: binId, warehouse: { organizationId } },
+    include: { warehouse: true },
+  });
+
+  if (!bin) throw new AppError(404, "WAREHOUSE_BIN_NOT_FOUND", "Warehouse bin was not found");
+
+  return bin;
+}
+
+async function getTenantTransferProduct(
+  tx: WarehouseTransaction,
+  organizationId: string,
+  productId: string,
+) {
+  const product = await tx.product.findFirst({
+    where: { id: productId, organizationId, status: ProductStatus.ACTIVE },
+    select: { id: true, name: true, sku: true },
+  });
+
+  if (!product) throw new AppError(404, "PRODUCT_NOT_FOUND", "Active product was not found");
+
+  return product;
+}
+
+export async function transferWarehouseStock(organizationId: string, input: WarehouseTransferInput, userId?: string) {
+  if (input.fromBinId === input.toBinId) {
+    throw new AppError(400, "SAME_TRANSFER_BIN", "Transfer source and destination bins must be different");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const [product, fromBin, toBin] = await Promise.all([
+      getTenantTransferProduct(tx, organizationId, input.productId),
+      getTenantTransferBin(tx, organizationId, input.fromBinId),
+      getTenantTransferBin(tx, organizationId, input.toBinId),
+    ]);
+    const sourceInventory = await tx.inventory.findUnique({
+      where: { productId_binId: { productId: input.productId, binId: input.fromBinId } },
+      select: { id: true, quantity: true },
+    });
+
+    if (!sourceInventory || sourceInventory.quantity < input.quantity) {
+      throw new AppError(409, "INSUFFICIENT_STOCK", "Insufficient stock in the source bin");
+    }
+
+    await tx.inventory.update({
+      where: { id: sourceInventory.id },
+      data: { quantity: { decrement: input.quantity } },
+    });
+    const destinationInventory = await tx.inventory.upsert({
+      where: { productId_binId: { productId: input.productId, binId: input.toBinId } },
+      update: { quantity: { increment: input.quantity } },
+      create: { productId: input.productId, binId: input.toBinId, quantity: input.quantity },
+      include: {
+        product: { include: { inventory: { select: { quantity: true } } } },
+        bin: { include: { warehouse: true } },
+      },
+    });
+    const reference =
+      normalizeReference(input.reference) ??
+      `Transfer ${product.sku}: ${fromBin.code} to ${toBin.code}`;
+
+    const sourceMovement = await tx.stockMovement.create({
+      data: {
+        organizationId,
+        productId: input.productId,
+        warehouseId: fromBin.warehouse.id,
+        type: StockMovementType.TRANSFER,
+        quantity: -input.quantity,
+        reference,
+      },
+    });
+    const destinationMovement = await tx.stockMovement.create({
+      data: {
+        organizationId,
+        productId: input.productId,
+        warehouseId: toBin.warehouse.id,
+        type: StockMovementType.TRANSFER,
+        quantity: input.quantity,
+        reference,
+      },
+    });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "warehouse_transfer.create",
+        entityType: "StockMovement",
+        entityId: sourceMovement.id,
+        metadata: {
+          productId: input.productId,
+          fromBinId: input.fromBinId,
+          toBinId: input.toBinId,
+          quantity: input.quantity,
+          reference,
+          sourceMovementId: sourceMovement.id,
+          destinationMovementId: destinationMovement.id,
+        },
+      },
+      tx,
+    );
+
+    return {
+      product,
+      from: {
+        binId: fromBin.id,
+        binCode: fromBin.code,
+        warehouseId: fromBin.warehouse.id,
+        warehouseName: fromBin.warehouse.name,
+      },
+      to: {
+        binId: toBin.id,
+        binCode: toBin.code,
+        warehouseId: toBin.warehouse.id,
+        warehouseName: toBin.warehouse.name,
+        quantity: destinationInventory.quantity,
+      },
+      quantity: input.quantity,
+      reference,
+    };
+  });
 }

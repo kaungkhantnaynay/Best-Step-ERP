@@ -31,6 +31,9 @@ vi.mock("../prisma/client.js", () => ({
       notification: {
         create: vi.fn(),
       },
+      auditLog: {
+        create: vi.fn(),
+      },
     };
 
     return mockPrisma;

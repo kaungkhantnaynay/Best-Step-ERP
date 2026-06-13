@@ -12,7 +12,7 @@ import {
   updateProduct,
 } from "../services/product.service.js";
 
-function requireUser(request: { user?: { organizationId: string } }) {
+function requireUser(request: { user?: { organizationId: string; userId: string } }) {
   if (!request.user) throw new AppError(401, "AUTH_REQUIRED", "Authentication is required");
 
   return request.user;
@@ -28,7 +28,8 @@ export const listProductsController = asyncHandler(async (request, response) => 
 });
 
 export const createProductController = asyncHandler(async (request, response) => {
-  sendCreated(response, await createProduct(requireUser(request).organizationId, request.body));
+  const user = requireUser(request);
+  sendCreated(response, await createProduct(user.organizationId, request.body, user.userId));
 });
 
 export const getProductController = asyncHandler(async (request, response) => {
@@ -36,14 +37,16 @@ export const getProductController = asyncHandler(async (request, response) => {
 });
 
 export const updateProductController = asyncHandler(async (request, response) => {
+  const user = requireUser(request);
   sendOk(
     response,
-    await updateProduct(requireUser(request).organizationId, request.params.id as string, request.body),
+    await updateProduct(user.organizationId, request.params.id as string, request.body, user.userId),
   );
 });
 
 export const archiveProductController = asyncHandler(async (request, response) => {
-  sendOk(response, await archiveProduct(requireUser(request).organizationId, request.params.id as string));
+  const user = requireUser(request);
+  sendOk(response, await archiveProduct(user.organizationId, request.params.id as string, user.userId));
 });
 
 export const listCategoriesController = asyncHandler(async (request, response) => {
@@ -51,5 +54,6 @@ export const listCategoriesController = asyncHandler(async (request, response) =
 });
 
 export const createCategoryController = asyncHandler(async (request, response) => {
-  sendCreated(response, await createCategory(requireUser(request).organizationId, request.body));
+  const user = requireUser(request);
+  sendCreated(response, await createCategory(user.organizationId, request.body, user.userId));
 });

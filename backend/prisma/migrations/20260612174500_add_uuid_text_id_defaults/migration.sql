@@ -1,0 +1,17 @@
+ALTER TABLE "Organization" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "User" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Role" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Permission" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "RefreshToken" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Category" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Product" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Warehouse" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "WarehouseBin" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Inventory" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "StockMovement" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Order" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "OrderItem" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Shipment" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "TrackingHistory" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "Notification" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE "AuditLog" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;

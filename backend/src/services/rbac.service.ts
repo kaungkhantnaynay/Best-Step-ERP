@@ -34,6 +34,7 @@ export async function createDefaultRolesForOrganization(
   }
 
   const roles = new Map<string, string>();
+  const rolePermissions: Prisma.RolePermissionCreateManyInput[] = [];
 
   for (const [roleName, rolePermissionKeys] of Object.entries(defaultRoleTemplates)) {
     const role = await tx.role.upsert({
@@ -51,23 +52,19 @@ export async function createDefaultRolesForOrganization(
     });
 
     for (const permissionKey of rolePermissionKeys) {
-      await tx.rolePermission.upsert({
-        where: {
-          roleId_permissionId: {
-            roleId: role.id,
-            permissionId: permissionByKey.get(permissionKey)!,
-          },
-        },
-        update: {},
-        create: {
-          roleId: role.id,
-          permissionId: permissionByKey.get(permissionKey)!,
-        },
+      rolePermissions.push({
+        roleId: role.id,
+        permissionId: permissionByKey.get(permissionKey)!,
       });
     }
 
     roles.set(role.name, role.id);
   }
+
+  await tx.rolePermission.createMany({
+    data: rolePermissions,
+    skipDuplicates: true,
+  });
 
   return roles;
 }

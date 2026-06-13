@@ -36,16 +36,49 @@ Install dependencies from the repository root:
 npm install
 ```
 
-Run the frontend:
+Copy backend environment placeholders and fill in Supabase PostgreSQL credentials:
 
 ```bash
-npm run dev
+cp backend/.env.example backend/.env
 ```
 
-Run frontend lint checks:
+Start a local Redis server separately, or point `REDIS_URL` at an available Redis instance for BullMQ-backed jobs.
+
+Run the frontend and backend together:
 
 ```bash
-npm run lint
+npm run dev:all
 ```
 
-Backend scripts are scaffolded in `backend/package.json`; backend dependencies will be added when the Express API is implemented.
+Or run each process separately:
+
+```bash
+npm run frontend:dev
+npm run backend:dev
+npm run backend:worker:auth
+```
+
+## Verification
+
+Run the full local check suite from the repository root:
+
+```bash
+npm run check
+```
+
+Useful targeted checks:
+
+```bash
+npm run frontend:lint
+npm run frontend:build
+npm run backend:build
+npm run backend:lint
+npm run backend:test
+```
+
+## Current MVP Status
+
+- Auth, refresh tokens, RBAC, products, warehouses, inventory, orders, shipments, analytics, and notifications have backend routes.
+- Logged-in ERP screens are wired to authenticated API calls instead of static mock data.
+- Supabase PostgreSQL remains the database infrastructure; Prisma migrations and the Express API remain the application source of truth.
+- Redis is used for background-job infrastructure via `REDIS_URL`; Supabase PostgreSQL remains the active database target.

@@ -23,6 +23,9 @@ vi.mock("../prisma/client.js", () => ({
       update: vi.fn(),
       updateMany: vi.fn(),
     },
+    auditLog: {
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -111,7 +114,7 @@ describe("auth service", () => {
           ),
       },
       rolePermission: {
-        upsert: vi.fn().mockResolvedValue({}),
+        createMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       user: {
         create: vi.fn().mockResolvedValue(authUser({ userRoles: [] })),
@@ -122,6 +125,9 @@ describe("auth service", () => {
       },
       refreshToken: {
         create: vi.fn().mockResolvedValue({ id: "refresh-1" }),
+      },
+      auditLog: {
+        create: vi.fn().mockResolvedValue({ id: "audit-1" }),
       },
     };
 
@@ -144,18 +150,14 @@ describe("auth service", () => {
       },
     });
     expect(tx.role.upsert).toHaveBeenCalledTimes(4);
-    expect(tx.rolePermission.upsert).toHaveBeenCalledWith({
-      where: {
-        roleId_permissionId: {
+    expect(tx.rolePermission.createMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        {
           roleId: "role-owner",
           permissionId: "permission-auth.me",
         },
-      },
-      update: {},
-      create: {
-        roleId: "role-owner",
-        permissionId: "permission-auth.me",
-      },
+      ]),
+      skipDuplicates: true,
     });
     expect(tx.userRole.create).toHaveBeenCalledWith({
       data: {

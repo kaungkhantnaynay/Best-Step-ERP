@@ -40,10 +40,10 @@ Auth rate limits:
 - `POST /warehouses`: create warehouse.
 - `GET /warehouses/:id`: get warehouse details.
 - `POST /warehouses/:id/bins`: create warehouse bin.
+- `POST /warehouse-transfers`: transfer product stock between tenant-owned bins in a transaction and record paired transfer movements. Requires `inventory.write`.
 - `GET /inventory`: list tenant-scoped inventory by product, warehouse, bin, search, and low-stock state with page pagination.
 - `POST /inventory/stock-in`: add stock and record a stock movement.
 - `POST /inventory/stock-out`: remove stock, reject insufficient stock, record a stock movement, and create low-stock notifications when thresholds are crossed.
-- `POST /inventory/transfer`: transfer stock between warehouses or bins.
 - `GET /stock-movements`: list tenant-scoped movement history by product, warehouse, and movement type with page pagination.
 
 ## Orders
@@ -65,12 +65,9 @@ Auth rate limits:
 
 ## Analytics, Notifications, and Audit
 
-- `GET /analytics/summary`: totals for orders, revenue, inventory value, shipment performance, and warehouse activity.
-- `GET /analytics/sales`: monthly sales chart data.
-- `GET /analytics/inventory-trends`: inventory trend chart data.
-- `GET /analytics/shipment-performance`: shipment performance chart data.
-- `GET /notifications`: list notifications.
-- `PATCH /notifications/:id/read`: mark notification as read.
+- `GET /analytics/dashboard`: tenant-scoped KPI summary, order status counts, shipment status counts, and movement summaries. Requires `analytics.read`.
+- `GET /notifications`: list tenant-scoped notifications with page pagination and optional `unread=true`. Requires `notifications.read`.
+- `PATCH /notifications/:id/read`: mark a tenant notification as read. Requires `notifications.write`.
 - `GET /audit-logs`: list audit events.
 
 ## API Rules

@@ -21,6 +21,7 @@ vi.mock("../prisma/client.js", () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    auditLog: { create: vi.fn() },
   },
 }));
 

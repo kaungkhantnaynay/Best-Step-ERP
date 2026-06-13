@@ -20,11 +20,13 @@ export function AuthPanel({ mode }: AuthPanelProps) {
   const router = useRouter();
   const { login, register } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<Array<{ path: string; message: string }>>([]);
   const [pending, setPending] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setErrorDetails([]);
     setPending(true);
 
     const formData = new FormData(event.currentTarget);
@@ -48,7 +50,12 @@ export function AuthPanel({ mode }: AuthPanelProps) {
 
       router.push("/app/products");
     } catch (caughtError) {
-      setError(caughtError instanceof ApiError ? caughtError.message : "Authentication failed");
+      if (caughtError instanceof ApiError) {
+        setError(caughtError.message);
+        setErrorDetails(caughtError.details ?? []);
+      } else {
+        setError("Authentication failed");
+      }
     } finally {
       setPending(false);
     }
@@ -73,13 +80,38 @@ export function AuthPanel({ mode }: AuthPanelProps) {
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             {isRegister ? (
               <>
-                <Field label="Full name" id="name" name="name" placeholder="Aye Chan" required />
-                <Field label="Organization" id="organizationName" name="organizationName" placeholder="Best Step Distribution" required />
-                <Field label="Workspace slug" id="organizationSlug" name="organizationSlug" placeholder="best-step-distribution" />
+                <Field label="Full name" id="name" name="name" placeholder="Aye Chan" minLength={2} required />
+                <Field
+                  label="Organization"
+                  id="organizationName"
+                  name="organizationName"
+                  placeholder="Best Step Distribution"
+                  minLength={2}
+                  required
+                />
+                <Field
+                  label="Workspace slug"
+                  id="organizationSlug"
+                  name="organizationSlug"
+                  placeholder="best-step-distribution"
+                  minLength={3}
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  title="Use lowercase letters, numbers, and hyphens."
+                />
               </>
             ) : null}
             <Field label="Work email" id="email" name="email" type="email" placeholder="you@company.com" required />
-            <Field label="Password" id="password" name="password" type="password" placeholder="Enter your password" required />
+            <Field
+              label="Password"
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              minLength={8}
+              pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,128}"
+              title="Use 8 or more characters with lowercase, uppercase, and a number."
+              required
+            />
             {isRegister ? (
               <label className="flex gap-3 text-sm leading-6 text-muted-foreground">
                 <input type="checkbox" required className="mt-1 size-4 rounded border-border accent-primary" />
@@ -98,6 +130,16 @@ export function AuthPanel({ mode }: AuthPanelProps) {
               <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
               </p>
+            ) : null}
+            {errorDetails.length > 0 ? (
+              <ul className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {errorDetails.map((detail) => (
+                  <li key={`${detail.path}-${detail.message}`}>
+                    {detail.path ? `${detail.path}: ` : ""}
+                    {detail.message}
+                  </li>
+                ))}
+              </ul>
             ) : null}
             <Button type="submit" size="lg" className="w-full gap-2" disabled={pending}>
               {pending ? "Working..." : isRegister ? "Create workspace" : "Sign in"}
@@ -152,6 +194,9 @@ function Field({
   name,
   type = "text",
   placeholder,
+  minLength,
+  pattern,
+  title,
   required,
 }: {
   label: string;
@@ -159,6 +204,9 @@ function Field({
   name: string;
   type?: string;
   placeholder: string;
+  minLength?: number;
+  pattern?: string;
+  title?: string;
   required?: boolean;
 }) {
   return (
@@ -171,6 +219,9 @@ function Field({
         name={name}
         type={type}
         placeholder={placeholder}
+        minLength={minLength}
+        pattern={pattern}
+        title={title}
         required={required}
         className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-ring focus:ring-3 focus:ring-ring/20"
       />

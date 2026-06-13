@@ -10,7 +10,7 @@ import {
   updateOrderStatus,
 } from "../services/order.service.js";
 
-function requireUser(request: { user?: { organizationId: string } }) {
+function requireUser(request: { user?: { organizationId: string; userId: string } }) {
   if (!request.user) throw new AppError(401, "AUTH_REQUIRED", "Authentication is required");
 
   return request.user;
@@ -26,7 +26,8 @@ export const listOrdersController = asyncHandler(async (request, response) => {
 });
 
 export const createOrderController = asyncHandler(async (request, response) => {
-  sendCreated(response, await createOrder(requireUser(request).organizationId, request.body));
+  const user = requireUser(request);
+  sendCreated(response, await createOrder(user.organizationId, request.body, user.userId));
 });
 
 export const getOrderController = asyncHandler(async (request, response) => {
@@ -34,12 +35,14 @@ export const getOrderController = asyncHandler(async (request, response) => {
 });
 
 export const updateOrderStatusController = asyncHandler(async (request, response) => {
+  const user = requireUser(request);
   sendOk(
     response,
-    await updateOrderStatus(requireUser(request).organizationId, request.params.id as string, request.body),
+    await updateOrderStatus(user.organizationId, request.params.id as string, request.body, user.userId),
   );
 });
 
 export const cancelOrderController = asyncHandler(async (request, response) => {
-  sendOk(response, await cancelOrder(requireUser(request).organizationId, request.params.id as string));
+  const user = requireUser(request);
+  sendOk(response, await cancelOrder(user.organizationId, request.params.id as string, user.userId));
 });

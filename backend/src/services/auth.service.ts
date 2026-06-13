@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { Prisma } from "@prisma/client";
 import { env } from "../config/env.js";
 import { prisma } from "../prisma/client.js";
+import { recordAuditLog } from "./audit.service.js";
 import { createDefaultRolesForOrganization } from "./rbac.service.js";
 import type { AccessTokenPayload, RefreshTokenPayload } from "../types/request.js";
 import { AppError } from "../utils/app-error.js";
@@ -328,8 +329,23 @@ export async function registerOwner(input: RegisterInput, metadata?: RefreshToke
         data: refreshTokenCreateData(user.id, organization.id, refreshSession, metadata),
       });
 
+      await recordAuditLog(
+        {
+          organizationId: organization.id,
+          userId: user.id,
+          action: "auth.register",
+          entityType: "User",
+          entityId: user.id,
+          metadata: {
+            email: user.email,
+            organizationSlug: organization.slug,
+          },
+        },
+        tx,
+      );
+
       return createAuthResult(userWithRoles as AuthUserRecord, refreshSession);
-    });
+    }, { timeout: 15_000 });
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       throw new AppError(409, "AUTH_UNIQUE_CONSTRAINT", "Email or organization slug already exists");
@@ -381,6 +397,17 @@ export async function login(input: LoginInput, metadata?: RefreshTokenMetadata):
     },
   });
 
+  await recordAuditLog({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "auth.login",
+    entityType: "User",
+    entityId: user.id,
+    metadata: {
+      email: user.email,
+    },
+  });
+
   return createAuthResult(user as AuthUserRecord, refreshSession);
 }
 
@@ -429,6 +456,17 @@ export async function refresh(rawRefreshToken: string, metadata?: RefreshTokenMe
       },
     });
 
+    await recordAuditLog({
+      organizationId: storedToken.organizationId,
+      userId: storedToken.userId,
+      action: "auth.refresh_reuse_detected",
+      entityType: "RefreshTokenFamily",
+      entityId: storedToken.familyId,
+      metadata: {
+        reason: "token_payload_mismatch",
+      },
+    });
+
     logger.warn(
       {
         userId: storedToken.userId,
@@ -448,6 +486,17 @@ export async function refresh(rawRefreshToken: string, metadata?: RefreshTokenMe
       data: {
         revokedAt: new Date(),
         revokedReason: "token_reuse_detected",
+      },
+    });
+
+    await recordAuditLog({
+      organizationId: storedToken.organizationId,
+      userId: storedToken.userId,
+      action: "auth.refresh_reuse_detected",
+      entityType: "RefreshTokenFamily",
+      entityId: storedToken.familyId,
+      metadata: {
+        reason: "token_reuse_detected",
       },
     });
 
@@ -539,6 +588,14 @@ export async function logout(rawRefreshToken: string | undefined) {
     },
   });
 
+  await recordAuditLog({
+    organizationId: payload.organizationId,
+    userId: payload.sub,
+    action: "auth.logout",
+    entityType: "User",
+    entityId: payload.sub,
+  });
+
   logger.info("Refresh token revoked for logout");
 }
 
@@ -563,6 +620,17 @@ export async function logoutAll(userId: string, organizationId: string) {
     },
     "All refresh tokens revoked for user",
   );
+
+  await recordAuditLog({
+    organizationId,
+    userId,
+    action: "auth.logout_all",
+    entityType: "User",
+    entityId: userId,
+    metadata: {
+      revokedCount: result.count,
+    },
+  });
 
   return result.count;
 }

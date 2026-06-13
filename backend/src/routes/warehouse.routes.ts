@@ -4,6 +4,7 @@ import {
   createWarehouseController,
   getWarehouseController,
   listWarehousesController,
+  transferWarehouseStockController,
 } from "../controllers/warehouse.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
@@ -13,6 +14,7 @@ import {
   warehouseCreateSchema,
   warehouseIdParamsSchema,
   warehouseListQuerySchema,
+  warehouseTransferSchema,
 } from "../validators/warehouse.validators.js";
 
 export const warehouseRouter = Router();
@@ -42,4 +44,10 @@ warehouseRouter.post(
   requirePermission("warehouses.write"),
   validateRequest({ params: warehouseIdParamsSchema, body: warehouseBinCreateSchema }),
   createWarehouseBinController,
+);
+warehouseRouter.post(
+  "/warehouse-transfers",
+  requirePermission("inventory.write"),
+  validateRequest({ body: warehouseTransferSchema }),
+  transferWarehouseStockController,
 );

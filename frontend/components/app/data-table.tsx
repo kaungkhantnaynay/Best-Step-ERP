@@ -12,10 +12,12 @@ export function DataTable<T>({
   columns,
   rows,
   getRowKey,
+  emptyMessage = "No records found.",
 }: {
   columns: DataColumn<T>[];
   rows: T[];
   getRowKey: (row: T) => string;
+  emptyMessage?: string;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
@@ -38,7 +40,13 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
-            {rows.map((row) => (
+            {rows.length === 0 ? (
+              <tr>
+                <td className="px-4 py-8 text-center text-sm text-muted-foreground" colSpan={columns.length}>
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : rows.map((row) => (
               <tr key={getRowKey(row)} className="hover:bg-muted/35">
                 {columns.map((column) => (
                   <td

@@ -178,7 +178,7 @@ Tech Stack:
 - [x] Warehouse list
 - [x] Warehouse details
 - [x] Bin location management
-- [ ] Warehouse transfers
+- [x] Warehouse transfers
 
 ## Frontend
 - [x] Warehouse dashboard
@@ -259,13 +259,13 @@ Tech Stack:
 - [ ] Audit log viewer
 
 ## Notifications
-- [ ] Low stock notification
-- [ ] Shipment updates
+- [x] Low stock notification
+- [x] Shipment updates
 - [ ] Order alerts
 
 ## Background Jobs
-- [ ] Setup Redis
-- [ ] Setup BullMQ
+- [x] Setup Redis
+- [x] Setup BullMQ
 - [ ] Queue email jobs
 - [ ] Queue report generation
 
@@ -281,10 +281,10 @@ Tech Stack:
 ## Docker
 - [ ] Dockerize backend
 - [ ] Dockerize frontend
-- [ ] Create docker-compose
+- [x] Create docker-compose
 
 ## CI/CD
-- [ ] Setup GitHub Actions
+- [x] Setup GitHub Actions
 - [ ] Auto deploy frontend
 - [ ] Auto deploy backend
 

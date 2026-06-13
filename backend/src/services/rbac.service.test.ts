@@ -44,7 +44,7 @@ describe("rbac service", () => {
           ),
       },
       rolePermission: {
-        upsert: vi.fn().mockResolvedValue({}),
+        createMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
     };
 
@@ -65,18 +65,14 @@ describe("rbac service", () => {
         name: "owner",
       },
     });
-    expect(tx.rolePermission.upsert).toHaveBeenCalledWith({
-      where: {
-        roleId_permissionId: {
+    expect(tx.rolePermission.createMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        {
           roleId: "role-owner",
           permissionId: "permission-auth.me",
         },
-      },
-      update: {},
-      create: {
-        roleId: "role-owner",
-        permissionId: "permission-auth.me",
-      },
+      ]),
+      skipDuplicates: true,
     });
   });
 });

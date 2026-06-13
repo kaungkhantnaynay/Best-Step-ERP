@@ -1,5 +1,6 @@
 import { Prisma, ProductStatus, StockMovementType } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
+import { recordAuditLog } from "./audit.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -240,7 +241,7 @@ export async function listInventory(organizationId: string, query: InventoryList
   };
 }
 
-export async function stockIn(organizationId: string, input: StockMutationInput) {
+export async function stockIn(organizationId: string, input: StockMutationInput, userId?: string) {
   return prisma.$transaction(async (tx) => {
     const product = await getActiveProduct(tx, organizationId, input.productId);
     const bin = await getTenantBin(tx, organizationId, input.binId);
@@ -251,7 +252,7 @@ export async function stockIn(organizationId: string, input: StockMutationInput)
       update: { quantity: { increment: input.quantity } },
       create: { productId: input.productId, binId: input.binId, quantity: input.quantity },
     });
-    await tx.stockMovement.create({
+    const movement = await tx.stockMovement.create({
       data: {
         organizationId,
         productId: input.productId,
@@ -261,6 +262,22 @@ export async function stockIn(organizationId: string, input: StockMutationInput)
         reference: normalizeReference(input.reference),
       },
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "inventory.stock_in",
+        entityType: "StockMovement",
+        entityId: movement.id,
+        metadata: {
+          productId: input.productId,
+          binId: input.binId,
+          quantity: input.quantity,
+          reference: normalizeReference(input.reference),
+        },
+      },
+      tx,
+    );
 
     const afterTotal = await getProductTotalQuantity(tx, input.productId);
     await maybeCreateLowStockNotification(tx, {
@@ -276,7 +293,7 @@ export async function stockIn(organizationId: string, input: StockMutationInput)
   });
 }
 
-export async function stockOut(organizationId: string, input: StockMutationInput) {
+export async function stockOut(organizationId: string, input: StockMutationInput, userId?: string) {
   return prisma.$transaction(async (tx) => {
     const product = await getActiveProduct(tx, organizationId, input.productId);
     const bin = await getTenantBin(tx, organizationId, input.binId);
@@ -294,7 +311,7 @@ export async function stockOut(organizationId: string, input: StockMutationInput
       where: { productId_binId: { productId: input.productId, binId: input.binId } },
       data: { quantity: { decrement: input.quantity } },
     });
-    await tx.stockMovement.create({
+    const movement = await tx.stockMovement.create({
       data: {
         organizationId,
         productId: input.productId,
@@ -304,6 +321,22 @@ export async function stockOut(organizationId: string, input: StockMutationInput
         reference: normalizeReference(input.reference),
       },
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "inventory.stock_out",
+        entityType: "StockMovement",
+        entityId: movement.id,
+        metadata: {
+          productId: input.productId,
+          binId: input.binId,
+          quantity: input.quantity,
+          reference: normalizeReference(input.reference),
+        },
+      },
+      tx,
+    );
 
     const afterTotal = await getProductTotalQuantity(tx, input.productId);
     await maybeCreateLowStockNotification(tx, {

@@ -8,14 +8,21 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace frontend",
+    "dev:all": "npm run backend:dev & npm run frontend:dev",
+    "check": "npm run frontend:lint && npm run frontend:build && npm run backend:build && npm run backend:lint && npm run backend:test",
     "build": "npm run build --workspace frontend",
     "lint": "npm run lint --workspace frontend",
     "frontend:dev": "npm run dev --workspace frontend",
     "frontend:build": "npm run build --workspace frontend",
     "frontend:lint": "npm run lint --workspace frontend",
     "backend:dev": "npm run dev --workspace backend",
+    "backend:worker:auth": "npm run worker:auth --workspace backend",
     "backend:build": "npm run build --workspace backend",
     "backend:lint": "npm run lint --workspace backend",
     "backend:test": "npm run test --workspace backend"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.38.0",
+    "redis": "^6.0.0"
   }
 }

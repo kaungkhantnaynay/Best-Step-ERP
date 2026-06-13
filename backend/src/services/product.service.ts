@@ -1,5 +1,6 @@
 import { Prisma, ProductStatus } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
+import { recordAuditLog } from "./audit.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -188,7 +189,7 @@ export async function getProduct(organizationId: string, id: string) {
   return toProductResponse(product);
 }
 
-export async function createProduct(organizationId: string, input: ProductCreateInput) {
+export async function createProduct(organizationId: string, input: ProductCreateInput, userId?: string) {
   await assertCategoryBelongsToOrganization(organizationId, input.categoryId);
 
   const sku = input.sku ?? (await generateSku(organizationId, input.name));
@@ -213,26 +214,13 @@ export async function createProduct(organizationId: string, input: ProductCreate
       },
       include: includeProductRelations,
     });
-
-    return toProductResponse(product);
-  } catch (error) {
-    if (isUniqueConstraintError(error)) {
-      throw new AppError(409, "PRODUCT_SKU_ALREADY_EXISTS", "Product SKU already exists");
-    }
-
-    throw error;
-  }
-}
-
-export async function updateProduct(organizationId: string, id: string, input: ProductUpdateInput) {
-  await getProduct(organizationId, id);
-  await assertCategoryBelongsToOrganization(organizationId, input.categoryId);
-
-  try {
-    const product = await prisma.product.update({
-      where: { id },
-      data: mutationData(input),
-      include: includeProductRelations,
+    await recordAuditLog({
+      organizationId,
+      userId,
+      action: "product.create",
+      entityType: "Product",
+      entityId: product.id,
+      metadata: { sku: product.sku, name: product.name },
     });
 
     return toProductResponse(product);
@@ -245,13 +233,50 @@ export async function updateProduct(organizationId: string, id: string, input: P
   }
 }
 
-export async function archiveProduct(organizationId: string, id: string) {
+export async function updateProduct(organizationId: string, id: string, input: ProductUpdateInput, userId?: string) {
+  await getProduct(organizationId, id);
+  await assertCategoryBelongsToOrganization(organizationId, input.categoryId);
+
+  try {
+    const product = await prisma.product.update({
+      where: { id },
+      data: mutationData(input),
+      include: includeProductRelations,
+    });
+    await recordAuditLog({
+      organizationId,
+      userId,
+      action: "product.update",
+      entityType: "Product",
+      entityId: product.id,
+      metadata: { sku: product.sku, name: product.name },
+    });
+
+    return toProductResponse(product);
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new AppError(409, "PRODUCT_SKU_ALREADY_EXISTS", "Product SKU already exists");
+    }
+
+    throw error;
+  }
+}
+
+export async function archiveProduct(organizationId: string, id: string, userId?: string) {
   await getProduct(organizationId, id);
 
   const product = await prisma.product.update({
     where: { id },
     data: { status: ProductStatus.ARCHIVED },
     include: includeProductRelations,
+  });
+  await recordAuditLog({
+    organizationId,
+    userId,
+    action: "product.archive",
+    entityType: "Product",
+    entityId: product.id,
+    metadata: { sku: product.sku, name: product.name },
   });
 
   return toProductResponse(product);
@@ -266,10 +291,18 @@ export async function listCategories(organizationId: string) {
   return categories.map(toCategoryResponse);
 }
 
-export async function createCategory(organizationId: string, input: CategoryCreateInput) {
+export async function createCategory(organizationId: string, input: CategoryCreateInput, userId?: string) {
   try {
     const category = await prisma.category.create({
       data: { organizationId, name: input.name },
+    });
+    await recordAuditLog({
+      organizationId,
+      userId,
+      action: "category.create",
+      entityType: "Category",
+      entityId: category.id,
+      metadata: { name: category.name },
     });
 
     return toCategoryResponse(category);

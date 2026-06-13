@@ -1,5 +1,6 @@
 import { OrderStatus, Prisma, ProductStatus, StockMovementType } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
+import { recordAuditLog } from "./audit.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -286,7 +287,7 @@ export async function getOrder(organizationId: string, orderId: string) {
   return toOrderResponse(await getTenantOrder(prisma, organizationId, orderId));
 }
 
-export async function createOrder(organizationId: string, input: OrderCreateInput) {
+export async function createOrder(organizationId: string, input: OrderCreateInput, userId?: string) {
   return prisma.$transaction(async (tx) => {
     const productIds = [...new Set(input.items.map((item) => item.productId))];
     const products = await getActiveProducts(tx, organizationId, productIds);
@@ -324,6 +325,22 @@ export async function createOrder(organizationId: string, input: OrderCreateInpu
         quantity: item.quantity,
       });
     }
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "order.create",
+        entityType: "Order",
+        entityId: order.id,
+        metadata: {
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          itemCount: orderItems.length,
+          totalAmount,
+        },
+      },
+      tx,
+    );
 
     return toOrderResponse(await getTenantOrder(tx, organizationId, order.id));
   });
@@ -333,6 +350,7 @@ export async function updateOrderStatus(
   organizationId: string,
   orderId: string,
   input: OrderStatusUpdateInput,
+  userId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     const order = await getTenantOrder(tx, organizationId, orderId);
@@ -358,12 +376,23 @@ export async function updateOrderStatus(
       data: { status: input.status },
       include: includeOrderRelations,
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "order.status_update",
+        entityType: "Order",
+        entityId: orderId,
+        metadata: { from: order.status, to: input.status, orderNumber: order.orderNumber },
+      },
+      tx,
+    );
 
     return toOrderResponse(updated);
   });
 }
 
-export async function cancelOrder(organizationId: string, orderId: string) {
+export async function cancelOrder(organizationId: string, orderId: string, userId?: string) {
   return prisma.$transaction(async (tx) => {
     const order = await getTenantOrder(tx, organizationId, orderId);
     assertStatusTransition(order.status, OrderStatus.CANCELLED);
@@ -380,6 +409,17 @@ export async function cancelOrder(organizationId: string, orderId: string) {
       data: { status: OrderStatus.CANCELLED },
       include: includeOrderRelations,
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "order.cancel",
+        entityType: "Order",
+        entityId: orderId,
+        metadata: { from: order.status, to: OrderStatus.CANCELLED, orderNumber: order.orderNumber },
+      },
+      tx,
+    );
 
     return toOrderResponse(updated);
   });

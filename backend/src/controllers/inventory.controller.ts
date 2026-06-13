@@ -12,7 +12,7 @@ import {
   stockOut,
 } from "../services/inventory.service.js";
 
-function requireUser(request: { user?: { organizationId: string } }) {
+function requireUser(request: { user?: { organizationId: string; userId: string } }) {
   if (!request.user) throw new AppError(401, "AUTH_REQUIRED", "Authentication is required");
 
   return request.user;
@@ -28,11 +28,13 @@ export const listInventoryController = asyncHandler(async (request, response) =>
 });
 
 export const stockInController = asyncHandler(async (request, response) => {
-  sendCreated(response, await stockIn(requireUser(request).organizationId, request.body));
+  const user = requireUser(request);
+  sendCreated(response, await stockIn(user.organizationId, request.body, user.userId));
 });
 
 export const stockOutController = asyncHandler(async (request, response) => {
-  sendCreated(response, await stockOut(requireUser(request).organizationId, request.body));
+  const user = requireUser(request);
+  sendCreated(response, await stockOut(user.organizationId, request.body, user.userId));
 });
 
 export const listStockMovementsController = asyncHandler(async (request, response) => {

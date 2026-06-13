@@ -16,19 +16,32 @@ function formatZodError(error: ZodError) {
   }));
 }
 
+function replaceRequestValue<TRequest extends object, TKey extends keyof TRequest>(
+  request: TRequest,
+  key: TKey,
+  value: TRequest[TKey],
+) {
+  Object.defineProperty(request, key, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  });
+}
+
 export function validateRequest(schemas: RequestSchemas): RequestHandler {
   return (request, _response, next) => {
     try {
       if (schemas.params) {
-        request.params = schemas.params.parse(request.params) as typeof request.params;
+        replaceRequestValue(request, "params", schemas.params.parse(request.params) as typeof request.params);
       }
 
       if (schemas.query) {
-        request.query = schemas.query.parse(request.query) as typeof request.query;
+        replaceRequestValue(request, "query", schemas.query.parse(request.query) as typeof request.query);
       }
 
       if (schemas.body) {
-        request.body = schemas.body.parse(request.body) as unknown;
+        replaceRequestValue(request, "body", schemas.body.parse(request.body) as typeof request.body);
       }
 
       next();

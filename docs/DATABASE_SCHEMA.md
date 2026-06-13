@@ -22,6 +22,7 @@
 - `products`: SKU, name, description, category, status, unit, pricing, and reorder threshold.
 - `inventory`: product quantity by warehouse/bin.
 - `stock_movements`: add, remove, reserve, release, transfer, adjustment, and fulfillment history.
+  - Warehouse transfers use two `TRANSFER` movement rows with the same reference: a negative quantity at the source warehouse and a positive quantity at the destination warehouse.
 
 ### Warehouse Operations
 

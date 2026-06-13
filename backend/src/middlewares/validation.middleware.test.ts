@@ -18,7 +18,28 @@ describe("validateRequest", () => {
       body: z.object({ name: z.string() }),
     })(request as never, {} as never, next);
 
-    expect(request.query.limit).toBe(10);
+    expect(request.query?.limit).toBe(10);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("replaces getter-only query objects", () => {
+    const next = vi.fn();
+    const request: { params: object; body: object; query?: { limit: number } } = {
+      params: {},
+      body: {},
+    };
+
+    Object.defineProperty(request, "query", {
+      configurable: true,
+      enumerable: true,
+      get: () => ({ limit: "10" }),
+    });
+
+    validateRequest({
+      query: z.object({ limit: z.coerce.number().int() }),
+    })(request as never, {} as never, next);
+
+    expect(request.query?.limit).toBe(10);
     expect(next).toHaveBeenCalledWith();
   });
 

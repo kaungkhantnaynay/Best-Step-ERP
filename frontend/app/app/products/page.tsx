@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, Edit2, Package, Plus, RefreshCw } from "lucide-react";
+import { Archive, Edit2, Eye, Package, Plus, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DataColumn } from "@/components/app/data-table";
 import { DataTable } from "@/components/app/data-table";
+import { FirstRunCard } from "@/components/app/first-run-card";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -157,7 +158,7 @@ export default function ProductsPage() {
         header: "Product",
         cell: (product) => (
           <div>
-            <p className="font-medium text-foreground">{product.name}</p>
+            <Link href={`/app/products/${product.id}`} className="font-medium text-foreground hover:text-primary hover:underline">{product.name}</Link>
             <p className="text-xs text-muted-foreground">{product.sku}</p>
           </div>
         ),
@@ -171,6 +172,10 @@ export default function ProductsPage() {
         header: "Actions",
         cell: (product) => (
           <div className="flex justify-end gap-2">
+            <Link href={`/app/products/${product.id}`} className="inline-flex size-7 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground">
+              <Eye className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">View {product.name}</span>
+            </Link>
             <Button type="button" variant="outline" size="icon-sm" onClick={() => setForm(toForm(product))}>
               <Edit2 className="size-3.5" aria-hidden="true" />
               <span className="sr-only">Edit {product.name}</span>
@@ -268,6 +273,21 @@ export default function ProductsPage() {
           {error ? <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
           {loading || authLoading ? (
             <div className="rounded-lg border border-border bg-card px-4 py-8 text-sm text-muted-foreground">Loading products...</div>
+          ) : products.length === 0 && !search && status === "all" && !categoryId && !lowStock ? (
+            <FirstRunCard
+              title="Create products after your first warehouse bin"
+              description="Use the operational setup path so stock can land in a real location before orders reserve it."
+              icon={Package}
+              action={{ label: "Create product", href: "/app/products" }}
+              steps={[
+                { label: "Warehouse", href: "/app/warehouses" },
+                { label: "Bin", href: "/app/warehouses" },
+                { label: "Product", href: "/app/products", active: true },
+                { label: "Stock in", href: "/app/inventory" },
+                { label: "Order", href: "/app/orders" },
+                { label: "Shipment", href: "/app/shipments" },
+              ]}
+            />
           ) : products.length === 0 ? (
             <div className="rounded-lg border border-border bg-card px-4 py-8 text-sm text-muted-foreground">No products match the current filters.</div>
           ) : (

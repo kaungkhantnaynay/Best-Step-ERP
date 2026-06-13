@@ -1,5 +1,6 @@
 import { OrderStatus, Prisma, ShipmentStatus } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
+import { recordAuditLog } from "./audit.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -178,7 +179,7 @@ export async function getShipment(organizationId: string, shipmentId: string) {
   return toShipmentResponse(await getTenantShipment(prisma, organizationId, shipmentId));
 }
 
-export async function createShipment(organizationId: string, input: ShipmentCreateInput) {
+export async function createShipment(organizationId: string, input: ShipmentCreateInput, userId?: string) {
   return prisma.$transaction(async (tx) => {
     const order = await getTenantOrder(tx, organizationId, input.orderId);
     const status = input.carrier ? ShipmentStatus.ASSIGNED : ShipmentStatus.PENDING;
@@ -203,6 +204,23 @@ export async function createShipment(organizationId: string, input: ShipmentCrea
       orderNumber: order.orderNumber,
       status,
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "shipment.create",
+        entityType: "Shipment",
+        entityId: shipment.id,
+        metadata: {
+          orderId: input.orderId,
+          orderNumber: order.orderNumber,
+          carrier: input.carrier,
+          trackingNumber: input.trackingNumber,
+          status,
+        },
+      },
+      tx,
+    );
 
     return toShipmentResponse(await getTenantShipment(tx, organizationId, shipment.id));
   });
@@ -212,6 +230,7 @@ export async function assignShipment(
   organizationId: string,
   shipmentId: string,
   input: ShipmentAssignInput,
+  userId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     const shipment = await getTenantShipment(tx, organizationId, shipmentId);
@@ -240,6 +259,17 @@ export async function assignShipment(
       orderNumber: shipment.order.orderNumber,
       status: nextStatus,
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "shipment.assign",
+        entityType: "Shipment",
+        entityId: shipmentId,
+        metadata: { carrier: input.carrier, trackingNumber: input.trackingNumber, status: nextStatus },
+      },
+      tx,
+    );
 
     return toShipmentResponse(updated);
   });
@@ -249,6 +279,7 @@ export async function updateShipmentStatus(
   organizationId: string,
   shipmentId: string,
   input: ShipmentStatusUpdateInput,
+  userId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     const shipment = await getTenantShipment(tx, organizationId, shipmentId);
@@ -277,6 +308,17 @@ export async function updateShipmentStatus(
         data: { status: OrderStatus.FULFILLED },
       });
     }
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "shipment.status_update",
+        entityType: "Shipment",
+        entityId: shipmentId,
+        metadata: { from: shipment.status, to: input.status, location: input.location, note: input.note },
+      },
+      tx,
+    );
 
     return toShipmentResponse(updated);
   });
@@ -286,6 +328,7 @@ export async function addTrackingEvent(
   organizationId: string,
   shipmentId: string,
   input: TrackingEventCreateInput,
+  userId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     const shipment = await getTenantShipment(tx, organizationId, shipmentId);
@@ -300,6 +343,17 @@ export async function addTrackingEvent(
       orderNumber: shipment.order.orderNumber,
       status: input.status,
     });
+    await recordAuditLog(
+      {
+        organizationId,
+        userId,
+        action: "shipment.tracking_event.create",
+        entityType: "Shipment",
+        entityId: shipmentId,
+        metadata: { status: input.status, location: input.location, note: input.note },
+      },
+      tx,
+    );
 
     return toShipmentResponse(await getTenantShipment(tx, organizationId, shipmentId));
   });

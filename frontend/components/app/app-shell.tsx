@@ -11,12 +11,13 @@ import {
   Package,
   PanelLeft,
   Route,
+  ScrollText,
   Search,
   Settings,
   Warehouse,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/app/shipments", label: "Shipments", icon: Route },
   { href: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/app/notifications", label: "Notifications", icon: Bell },
+  { href: "/app/audit-logs", label: "Audit logs", icon: ScrollText },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -106,10 +108,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Bell className="size-4" aria-hidden="true" />
                   <span className="sr-only">Notifications</span>
                 </Button>
-                <Button type="button" variant="outline" size="icon">
+                <Link
+                  href="/app/settings"
+                  className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
+                >
                   <Settings className="size-4" aria-hidden="true" />
                   <span className="sr-only">Settings</span>
-                </Button>
+                </Link>
                 <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-xs font-semibold text-foreground">
                   OP
                 </div>

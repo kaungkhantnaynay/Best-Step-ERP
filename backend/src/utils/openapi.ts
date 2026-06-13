@@ -565,6 +565,81 @@ export const openApiDocument = {
           data: { $ref: "#/components/schemas/Shipment" },
         },
       },
+      WarehouseTransferRequest: {
+        type: "object",
+        required: ["productId", "fromBinId", "toBinId", "quantity"],
+        properties: {
+          productId: { type: "string", format: "uuid" },
+          fromBinId: { type: "string", format: "uuid" },
+          toBinId: { type: "string", format: "uuid" },
+          quantity: { type: "integer", minimum: 1 },
+          reference: { type: "string", nullable: true, maxLength: 160 },
+        },
+      },
+      DashboardAnalyticsResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: {
+            type: "object",
+            required: ["kpis", "ordersByStatus", "shipmentsByStatus", "movementsByType"],
+            properties: {
+              kpis: { type: "object" },
+              ordersByStatus: { type: "object" },
+              shipmentsByStatus: { type: "object" },
+              movementsByType: { type: "object" },
+            },
+          },
+        },
+      },
+      Notification: {
+        type: "object",
+        required: ["id", "title", "body", "readAt", "createdAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          title: { type: "string" },
+          body: { type: "string" },
+          readAt: { type: "string", format: "date-time", nullable: true },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      NotificationListResponse: {
+        type: "object",
+        required: ["data", "pagination"],
+        properties: {
+          data: { type: "array", items: { $ref: "#/components/schemas/Notification" } },
+          pagination: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+      },
+      NotificationResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { $ref: "#/components/schemas/Notification" },
+        },
+      },
+      AuditLog: {
+        type: "object",
+        required: ["id", "organizationId", "userId", "action", "entityType", "entityId", "metadata", "createdAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          organizationId: { type: "string", format: "uuid" },
+          userId: { type: "string", format: "uuid", nullable: true },
+          action: { type: "string", example: "product.create" },
+          entityType: { type: "string", example: "Product" },
+          entityId: { type: "string" },
+          metadata: { type: "object", nullable: true, additionalProperties: true },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      AuditLogListResponse: {
+        type: "object",
+        required: ["data", "pagination"],
+        properties: {
+          data: { type: "array", items: { $ref: "#/components/schemas/AuditLog" } },
+          pagination: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+      },
       ErrorResponse: {
         type: "object",
         required: ["error"],
@@ -1103,6 +1178,24 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/v1/warehouse-transfers": {
+      post: {
+        summary: "Transfer stock between warehouse bins",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/WarehouseTransferRequest" } } },
+        },
+        responses: {
+          "201": { description: "Stock transferred" },
+          "400": { description: "Validation error or same source and destination bin" },
+          "401": { description: "Authentication required" },
+          "403": { description: "inventory.write permission required" },
+          "404": { description: "Product or warehouse bin not found" },
+          "409": { description: "Insufficient stock" },
+        },
+      },
+    },
     "/api/v1/orders": {
       get: {
         summary: "List orders",
@@ -1351,6 +1444,76 @@ export const openApiDocument = {
           },
           "401": { description: "Authentication required" },
           "403": { description: "inventory.read permission required" },
+        },
+      },
+    },
+    "/api/v1/analytics/dashboard": {
+      get: {
+        summary: "Get dashboard analytics",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Tenant-scoped dashboard analytics",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/DashboardAnalyticsResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "analytics.read permission required" },
+        },
+      },
+    },
+    "/api/v1/notifications": {
+      get: {
+        summary: "List notifications",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "unread", in: "query", schema: { type: "boolean" } },
+        ],
+        responses: {
+          "200": {
+            description: "Tenant-scoped notifications",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/NotificationListResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "notifications.read permission required" },
+        },
+      },
+    },
+    "/api/v1/notifications/{id}/read": {
+      patch: {
+        summary: "Mark notification read",
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Notification marked read",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/NotificationResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "notifications.write permission required" },
+          "404": { description: "Notification not found" },
+        },
+      },
+    },
+    "/api/v1/audit-logs": {
+      get: {
+        summary: "List audit logs",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "entityType", in: "query", schema: { type: "string", minLength: 1, maxLength: 80 } },
+          { name: "entityId", in: "query", schema: { type: "string", minLength: 1, maxLength: 120 } },
+          { name: "action", in: "query", schema: { type: "string", minLength: 1, maxLength: 80 } },
+        ],
+        responses: {
+          "200": {
+            description: "Tenant-scoped audit log entries",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/AuditLogListResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "audit.read permission required" },
         },
       },
     },

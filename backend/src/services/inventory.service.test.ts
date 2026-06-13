@@ -30,6 +30,9 @@ vi.mock("../prisma/client.js", () => ({
       notification: {
         create: vi.fn(),
       },
+      auditLog: {
+        create: vi.fn(),
+      },
     };
 
     return mockPrisma;
@@ -181,6 +184,7 @@ describe("inventory service", () => {
     mockedInventoryFindUnique.mockResolvedValue(
       inventoryRow({ quantity: 15, product: product({ inventory: [{ quantity: 15 }] }) }) as never,
     );
+    mockedStockMovementCreate.mockResolvedValue(movement({ id: "movement-stock-in" }) as never);
 
     await expect(
       stockIn("org-1", { productId: "product-1", binId: "bin-1", quantity: 5, reference: "PO-100" }),
@@ -213,6 +217,7 @@ describe("inventory service", () => {
     mockedInventoryAggregate
       .mockResolvedValueOnce({ _sum: { quantity: 12 } } as never)
       .mockResolvedValueOnce({ _sum: { quantity: 9 } } as never);
+    mockedStockMovementCreate.mockResolvedValue(movement({ id: "movement-stock-out" }) as never);
 
     await stockOut("org-1", { productId: "product-1", binId: "bin-1", quantity: 3, reference: "SO-100" });
 
