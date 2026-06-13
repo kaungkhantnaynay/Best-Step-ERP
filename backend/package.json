@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "worker:auth": "tsx watch src/jobs/auth-maintenance.processor.ts",
+    "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "lint": "eslint \"src/**/*.ts\"",
