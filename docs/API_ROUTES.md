@@ -68,7 +68,7 @@ Auth rate limits:
 - `GET /analytics/dashboard`: tenant-scoped KPI summary, order status counts, shipment status counts, and movement summaries. Requires `analytics.read`.
 - `GET /notifications`: list tenant-scoped notifications with page pagination and optional `unread=true`. Requires `notifications.read`.
 - `PATCH /notifications/:id/read`: mark a tenant notification as read. Requires `notifications.write`.
-- `GET /audit-logs`: list audit events.
+- `GET /audit-logs`: list tenant-scoped audit events with `page`, `limit`, `entityType`, `entityId`, and `action` filters. Requires `audit.read`.
 
 ## API Rules
 

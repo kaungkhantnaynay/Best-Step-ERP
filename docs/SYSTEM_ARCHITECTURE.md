@@ -97,3 +97,5 @@ flowchart LR
   WorkerHost --> ManagedRedis
   WorkerHost --> ManagedPostgres
 ```
+
+Current local development uses Supabase PostgreSQL and Upstash-compatible Redis connection strings through environment variables. Production deployment is still planned separately.

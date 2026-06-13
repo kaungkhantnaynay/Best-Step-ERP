@@ -52,7 +52,7 @@ Tech Stack:
 ## 2. Setup Prisma
 - [x] Install Prisma
 - [x] Initialize Prisma
-- [ ] Configure .env
+- [x] Configure .env
 - [x] Create first migration
 - [x] Apply Prisma migration to Supabase development database
 
@@ -128,8 +128,8 @@ Tech Stack:
 ## 2. Role-Based Access Control
 - [x] Create roles
 - [x] Create permissions
-- [ ] Protect routes
-- [ ] Restrict admin routes
+- [x] Protect routes
+- [x] Restrict admin routes
 
 ## 3. Auth Validation, Rate Limits, and Docs
 - [x] Validate register and login payloads
@@ -254,9 +254,9 @@ Tech Stack:
 # PHASE 11 — Advanced Features
 
 ## Audit Logs
-- [ ] Track entity changes
-- [ ] Store user actions
-- [ ] Audit log viewer
+- [x] Track entity changes
+- [x] Store user actions
+- [x] Audit log viewer
 
 ## Notifications
 - [x] Low stock notification
