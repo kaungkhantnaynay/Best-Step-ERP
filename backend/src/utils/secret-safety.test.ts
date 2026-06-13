@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -16,7 +16,9 @@ const scannedTrackedFiles = execFileSync("git", [
   .split("\n")
   .filter(Boolean);
 
-const scannedFiles = [...new Set([...scannedTrackedFiles, "backend/.env.example"])];
+const scannedFiles = [...new Set([...scannedTrackedFiles, "backend/.env.example"])].filter((filePath) =>
+  existsSync(join(repoRoot, filePath)),
+);
 
 const secretPatterns = [
   {

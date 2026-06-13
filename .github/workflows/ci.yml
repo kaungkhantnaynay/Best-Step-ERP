@@ -29,6 +29,9 @@ jobs:
       - name: Frontend build
         run: npm run frontend:build
 
+      - name: Generate Prisma client
+        run: npm run backend:prisma:generate
+
       - name: Backend build
         run: npm run backend:build
 
