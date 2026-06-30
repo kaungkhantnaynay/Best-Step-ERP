@@ -17,6 +17,7 @@ describe("rbac defaults", () => {
   it("keeps admin below owner by excluding audit read access", () => {
     expect(defaultRoleTemplates.admin).toContain("roles.manage");
     expect(defaultRoleTemplates.admin).not.toContain("audit.read");
+    expect(defaultRoleTemplates.admin).not.toContain("users.admin.create");
   });
 
   it("keeps staff read-oriented", () => {

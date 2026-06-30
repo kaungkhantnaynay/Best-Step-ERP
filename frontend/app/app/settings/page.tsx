@@ -2,13 +2,25 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, RefreshCw, Settings, ShieldCheck, UserRound } from "lucide-react";
+import { LogOut, RefreshCw, Settings, ShieldCheck, UserPlus, UserRound } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
-import { ApiError, apiRequest, type AuthUser } from "@/lib/api";
+import {
+  ApiError,
+  apiRequest,
+  type AdminUserCreateMutation,
+  type AdminUserResponse,
+  type AuthUser,
+} from "@/lib/api";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useAuthenticatedRequest } from "@/lib/use-authenticated-request";
+
+const emptyAdminForm = {
+  name: "",
+  email: "",
+  password: "",
+};
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -17,6 +29,8 @@ export default function SettingsPage() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [adminForm, setAdminForm] = useState(emptyAdminForm);
+  const [createdAdmin, setCreatedAdmin] = useState<AdminUserResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadAccount = useCallback(async () => {
@@ -76,6 +90,36 @@ export default function SettingsPage() {
       setSaving(false);
     }
   }
+
+  async function handleCreateAdmin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setCreatedAdmin(null);
+
+    const payload: AdminUserCreateMutation = {
+      name: adminForm.name,
+      email: adminForm.email,
+      password: adminForm.password,
+    };
+
+    try {
+      const result = await requestWithAuth<{ data: AdminUserResponse }>("/users/admin", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      setCreatedAdmin(result.data);
+      setAdminForm(emptyAdminForm);
+    } catch (caughtError) {
+      setError(caughtError instanceof ApiError ? caughtError.message : "Unable to create admin account");
+      setAdminForm((current) => ({ ...current, password: "" }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const canCreateAdmin = user?.permissions.includes("users.admin.create") ?? false;
 
   if (!authLoading && !accessToken) {
     return (
@@ -154,8 +198,98 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
+        {canCreateAdmin ? (
+          <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <UserPlus className="size-4 text-primary" aria-hidden="true" />
+                <h2 className="text-sm font-semibold text-foreground">Create admin account</h2>
+              </div>
+              <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={handleCreateAdmin}>
+                <AdminField
+                  label="Name"
+                  id="admin-name"
+                  value={adminForm.name}
+                  onChange={(value) => setAdminForm((current) => ({ ...current, name: value }))}
+                  autoComplete="name"
+                />
+                <AdminField
+                  label="Email"
+                  id="admin-email"
+                  type="email"
+                  value={adminForm.email}
+                  onChange={(value) => setAdminForm((current) => ({ ...current, email: value }))}
+                  autoComplete="email"
+                />
+                <AdminField
+                  label="Temporary password"
+                  id="admin-password"
+                  type="password"
+                  value={adminForm.password}
+                  onChange={(value) => setAdminForm((current) => ({ ...current, password: value }))}
+                  autoComplete="new-password"
+                  className="sm:col-span-2"
+                />
+                <div className="sm:col-span-2">
+                  <Button type="submit" disabled={saving}>
+                    <UserPlus className="mr-2 size-4" aria-hidden="true" />
+                    Create admin
+                  </Button>
+                </div>
+              </form>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground">Created admin</h2>
+              {createdAdmin ? (
+                <dl className="mt-4 grid gap-3">
+                  <InfoItem label="Name" value={createdAdmin.name} />
+                  <InfoItem label="Email" value={createdAdmin.email} />
+                  <InfoItem label="Roles" value={createdAdmin.roles.join(", ")} />
+                  <InfoItem label="Created" value={new Date(createdAdmin.createdAt).toLocaleString()} />
+                </dl>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Newly created admin account details will appear here after submission.
+                </p>
+              )}
+            </div>
+          </section>
+        ) : null}
       </div>
     </>
+  );
+}
+
+function AdminField({
+  label,
+  id,
+  value,
+  onChange,
+  type = "text",
+  autoComplete,
+  className = "",
+}: {
+  label: string;
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  autoComplete?: string;
+  className?: string;
+}) {
+  return (
+    <label className={`block text-sm ${className}`} htmlFor={id}>
+      <span className="font-medium text-foreground">{label}</span>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        autoComplete={autoComplete}
+        required
+        className="mt-2 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+      />
+    </label>
   );
 }
 

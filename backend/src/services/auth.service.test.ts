@@ -82,6 +82,7 @@ describe("auth service", () => {
         findMany: vi.fn().mockResolvedValue([
           "auth.me",
           "users.manage",
+          "users.admin.create",
           "roles.manage",
           "products.read",
           "products.write",

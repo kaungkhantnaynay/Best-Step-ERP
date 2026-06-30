@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/prisma/client.js";
 import {
   createDefaultRolesForOrganization,
   upsertPermissionCatalog,
 } from "../src/services/rbac.service.js";
-
-const prisma = new PrismaClient();
 
 async function main() {
   await prisma.$transaction(async (tx) => {
@@ -19,7 +17,7 @@ async function main() {
     for (const organization of organizations) {
       await createDefaultRolesForOrganization(tx, organization.id);
     }
-  });
+  }, { timeout: 30_000 });
 }
 
 main()

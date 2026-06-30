@@ -19,6 +19,7 @@ import { notificationRouter } from "./routes/notification.routes.js";
 import { orderRouter } from "./routes/order.routes.js";
 import { productRouter } from "./routes/product.routes.js";
 import { shipmentRouter } from "./routes/shipment.routes.js";
+import { userRouter } from "./routes/user.routes.js";
 import { warehouseRouter } from "./routes/warehouse.routes.js";
 import { openApiDocument } from "./utils/openapi.js";
 
@@ -38,6 +39,7 @@ app.use("/api/v1", warehouseRouter);
 app.use("/api/v1", inventoryRouter);
 app.use("/api/v1", orderRouter);
 app.use("/api/v1", shipmentRouter);
+app.use("/api/v1", userRouter);
 app.use("/api/v1", analyticsRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1", auditRouter);

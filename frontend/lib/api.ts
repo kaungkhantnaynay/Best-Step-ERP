@@ -16,6 +16,21 @@ export type AuthResponse = {
   user: AuthUser;
 };
 
+export type AdminUserCreateMutation = {
+  name: string;
+  email: string;
+  password: string;
+};
+
+export type AdminUserResponse = {
+  id: string;
+  organizationId: string;
+  email: string;
+  name: string;
+  roles: string[];
+  createdAt: string;
+};
+
 export type ProductStatus = "ACTIVE" | "ARCHIVED";
 export type ProductStockStatus = "Active" | "Low stock" | "Archived";
 

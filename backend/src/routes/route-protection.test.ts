@@ -13,6 +13,7 @@ const protectedRouteFiles = [
   "order.routes.ts",
   "product.routes.ts",
   "shipment.routes.ts",
+  "user.routes.ts",
   "warehouse.routes.ts",
 ];
 

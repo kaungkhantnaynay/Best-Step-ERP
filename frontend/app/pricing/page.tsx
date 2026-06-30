@@ -18,7 +18,7 @@ export default function PricingPage() {
           <SectionHeading
             eyebrow="Pricing"
             title="Plans for teams moving from spreadsheet work to ERP discipline."
-            description="Pick a starting point for the static prototype. Real billing, upgrade prompts, and locked feature handling come later."
+            description="Pick a starting point for the ERP workspace. Real billing, upgrade prompts, and locked feature handling are planned for a later phase."
           />
           <div className="rounded-lg border border-border bg-card p-5">
             <p className="text-sm font-semibold text-foreground">

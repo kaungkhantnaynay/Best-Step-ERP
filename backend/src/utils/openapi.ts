@@ -89,6 +89,40 @@ export const openApiDocument = {
           password: { type: "string", format: "password", minLength: 1, maxLength: 128 },
         },
       },
+      AdminUserCreateRequest: {
+        type: "object",
+        required: ["name", "email", "password"],
+        properties: {
+          name: { type: "string", minLength: 2, maxLength: 120, example: "Operations Admin" },
+          email: { type: "string", format: "email", maxLength: 254, example: "admin@example.com" },
+          password: {
+            type: "string",
+            format: "password",
+            minLength: 8,
+            maxLength: 128,
+            description: "Must include lowercase, uppercase, and numeric characters.",
+          },
+        },
+      },
+      AdminUser: {
+        type: "object",
+        required: ["id", "organizationId", "email", "name", "roles", "createdAt"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          organizationId: { type: "string", format: "uuid" },
+          email: { type: "string", format: "email" },
+          name: { type: "string" },
+          roles: { type: "array", items: { type: "string" } },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      AdminUserResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: { $ref: "#/components/schemas/AdminUser" },
+        },
+      },
       SuccessResponse: {
         type: "object",
         required: ["data"],
@@ -941,6 +975,31 @@ export const openApiDocument = {
               },
             },
           },
+        },
+      },
+    },
+    "/api/v1/users/admin": {
+      post: {
+        summary: "Create admin user",
+        description: "Creates an admin user inside the authenticated user's organization.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AdminUserCreateRequest" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Admin user created",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/AdminUserResponse" } } },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Authentication required" },
+          "403": { description: "users.admin.create permission required" },
+          "409": { description: "Email already exists" },
         },
       },
     },

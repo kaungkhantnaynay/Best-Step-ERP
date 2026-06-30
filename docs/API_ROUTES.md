@@ -24,6 +24,10 @@ Auth rate limits:
 - `POST /auth/refresh`: `AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_MS`.
 - Auth rate limit errors return `429 RATE_LIMITED` with `details.retryAfter`.
 
+## Users
+
+- `POST /users/admin`: create an admin user in the authenticated organization. Requires `users.admin.create`.
+
 ## Products and Categories
 
 - `GET /products`: list tenant-scoped products with search, status, category, low-stock filters, and page pagination.

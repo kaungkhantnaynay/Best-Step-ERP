@@ -88,7 +88,7 @@ Best Step is a logistics ERP SaaS platform for inventory, warehouse operations, 
 ## Phase 12: DevOps and API Documentation
 
 - Keep local development runnable through npm workspace scripts, Supabase PostgreSQL connection strings, and a separately managed Redis instance.
-- Document environment setup for frontend, backend, workers, Supabase PostgreSQL, and Redis.
+- Document production readiness for frontend, backend, workers, Supabase PostgreSQL, Redis, and verification.
 - Add GitHub Actions for lint, typecheck, tests, and build.
 - Document all backend APIs with Swagger/OpenAPI.
 

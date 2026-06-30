@@ -1,53 +1,56 @@
-# Frontend UI Plan: Public Site + ERP App
+# Frontend Application State
 
 ## Summary
 
-Build the frontend as two distinct experiences. Pre-auth visitors get a lightweight SaaS marketing site. Logged-in users get a dense, task-focused ERP application. Public pages should feel bright, simple, centered, and product-led, inspired by NotebookLM's clarity without copying Google branding or content.
+The frontend is now an API-wired Next.js App Router application with two experiences:
 
-## Key Changes
+- Public/pre-auth pages for product positioning and authentication entry.
+- Logged-in ERP screens for daily operations across products, inventory, warehouses, orders, shipments, analytics, notifications, audit logs, and settings.
 
-- Public/pre-auth routes:
-  - `/`: landing page with hero, feature highlights, module preview, social proof placeholders, pricing CTA, and login/register CTAs.
-  - `/pricing`: simple pricing cards and plan comparison.
-  - `/login` and `/register`: auth entry screens styled for the brand, ready for future backend wiring.
-- App/post-auth routes:
-  - `/app`: ERP dashboard with KPI tiles, Recharts analytics, low-stock cards, recent orders, warehouse activity, and shipment timeline.
-  - `/app/products`: product table, search, filters, status badges, pagination, and product form modal/drawer.
-  - `/app/inventory`: inventory table, stock movement timeline, low-stock warning cards, and stock adjustment UI.
-  - `/app/warehouses`: warehouse dashboard, bin management UI, and transfer stock form.
-  - `/app/orders`: order table, status filters, order detail panel, and create order modal.
-  - `/app/shipments`: shipment dashboard, status cards, and tracking timeline.
-  - `/app/analytics` and `/app/notifications`: static first-pass screens aligned to `TASKS.md`.
-- Shared frontend foundation:
-  - Add `recharts`, `lucide-react`, and ShadCN-compatible component utilities.
-  - Define project theme tokens in `frontend/app/globals.css`.
-  - Use mock data and frontend-local TypeScript types for ERP entities.
-  - Keep mock data separate from UI components so API wiring can replace it later.
+Logged-in screens use authenticated API requests through `frontend/lib/api.ts` and `frontend/lib/use-authenticated-request.ts`. Frontend authorization remains a UX helper only; backend RBAC is the source of truth.
 
-## Product Rules
+## Public Routes
 
-- Public pages may use lightweight marketing language, CTAs, feature highlights, pricing, and social proof.
-- Public pages should use white/off-white surfaces, crisp text, soft borders, simple product previews, and direct centered messaging.
-- Logged-in app pages must stay dense, operational, clean, and task-focused.
-- Interactions should stay restrained and useful: subtle reveal timing, clear hover/focus states, and no decorative animation.
-- Marketing inside the app is only allowed for contextual cases: empty states, upgrade prompts for locked features, onboarding checklist, or setup guidance.
-- Frontend auth checks are UX helpers only; backend RBAC remains the source of truth once APIs exist.
-- Do not access Supabase directly from the frontend in this phase.
+- `/`: public product page with module previews and login/register calls to action.
+- `/pricing`: pricing and plan comparison content.
+- `/login`: login form wired to the backend auth API.
+- `/register`: organization owner registration form wired to the backend auth API.
 
-## Test Plan
+Public pages should feel bright, simple, centered, and product-led, inspired by NotebookLM's clarity without copying Google branding or content.
 
-- Run `npm run lint --workspace frontend`.
-- Run `npm run build --workspace frontend`.
-- Start the frontend dev server and verify:
-  - `/` is a polished public landing page.
-  - `/app` is the real ERP dashboard, not marketing content.
-  - Main module routes render correctly.
-  - Charts, tables, filters, forms, badges, pagination controls, and timelines are responsive.
-  - Vintage palettes, heavy gradients, and dark hero panels are not used as the main theme.
+## App Routes
+
+- `/app`: operational dashboard with KPI cards, Recharts analytics, low-stock watchlist, recent orders, warehouse activity, and shipment summaries.
+- `/app/products`: product table, search, filters, pagination, create/update form, archive action, and detail navigation.
+- `/app/products/[id]`: product detail view with stock and movement context.
+- `/app/inventory`: inventory table, stock-in/stock-out workflows, low-stock filters, valuation, and movement history.
+- `/app/warehouses`: warehouse list, bin management, transfer workflow, and warehouse activity.
+- `/app/warehouses/[id]`: warehouse detail view.
+- `/app/orders`: order list, status filters, create order workflow, and detail navigation.
+- `/app/orders/[id]`: order detail view with items and shipment context.
+- `/app/shipments`: shipment list, assignment/status workflows, and tracking summaries.
+- `/app/shipments/[id]`: shipment detail view with tracking timeline.
+- `/app/analytics`: dashboard analytics views backed by tenant-scoped API data.
+- `/app/notifications`: notification list and read-state workflow.
+- `/app/audit-logs`: tenant-scoped audit log viewer.
+- `/app/settings`: workspace/account-oriented settings surface.
+
+## Design Rules
+
+- Use the bright, simple project theme: white/off-white surfaces, crisp dark text, soft neutral borders, and one dependable primary accent.
+- Keep logged-in screens dense, scannable, and operational with tables, filters, forms, status badges, timelines, side navigation, and dashboards.
+- Use Recharts for dashboard and analytics charts.
+- Use ShadCN-compatible components and Tailwind utility classes where they fit the interface.
+- Keep motion restrained and useful through clear hover/focus states and subtle transitions.
+- Do not access Supabase directly from the frontend; all application data should flow through the Express API.
+
+## Verification
+
+- Run `npm run frontend:lint`.
+- Run `npm run frontend:build`.
+- Run the API and frontend locally, then verify:
+  - Public routes render without authentication.
+  - Authenticated app routes load tenant-scoped API data.
+  - Tables, filters, forms, badges, charts, pagination controls, and timelines remain responsive.
+  - The theme stays bright and work-focused, without dark hero panels or heavy gradients as the main visual direction.
   - Text does not overflow containers on desktop or mobile.
-
-## Assumptions
-
-- This phase is a static prototype using realistic mock data.
-- Backend API wiring, real auth, RBAC, and persistence come later.
-- The first implementation should prioritize visual structure, navigation, and workflow clarity over live data.

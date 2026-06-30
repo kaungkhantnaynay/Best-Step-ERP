@@ -1,6 +1,7 @@
 export const permissionCatalog = [
   ["auth.me", "Read the current authenticated user context"],
   ["users.manage", "Manage organization users and invitations"],
+  ["users.admin.create", "Create organization admin users"],
   ["roles.manage", "Manage organization roles and permissions"],
   ["products.read", "Read products and categories"],
   ["products.write", "Create and update products and categories"],
@@ -26,7 +27,7 @@ export const permissionKeys = permissionCatalog.map(([key]) => key) as Permissio
 
 export const defaultRoleTemplates = {
   owner: permissionKeys,
-  admin: permissionKeys.filter((key) => key !== "audit.read"),
+  admin: permissionKeys.filter((key) => key !== "audit.read" && key !== "users.admin.create"),
   manager: [
     "auth.me",
     "products.read",

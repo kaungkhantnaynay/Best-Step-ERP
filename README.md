@@ -27,6 +27,7 @@ Best Step is a full-stack logistics ERP SaaS project focused on inventory manage
 - [Database schema plan](docs/DATABASE_SCHEMA.md)
 - [API routes plan](docs/API_ROUTES.md)
 - [Project scope](docs/PROJECT_SCOPE.md)
+- [Production readiness](docs/PRODUCTION_READINESS.md)
 
 ## Development
 
@@ -42,21 +43,21 @@ Copy backend environment placeholders and fill in Supabase PostgreSQL credential
 cp backend/.env.example backend/.env
 ```
 
-Start a local Redis server separately, or point `REDIS_URL` at an available Redis instance for BullMQ-backed jobs.
+Start a local Redis server separately, or point `REDIS_URL` at an available managed Redis instance for BullMQ-backed jobs.
 
-Run the frontend and backend together:
+Run the frontend and backend API together:
 
 ```bash
 npm run dev:all
 ```
 
-Or run each process separately:
+Run all background workers in a second terminal:
 
 ```bash
-npm run frontend:dev
-npm run backend:dev
 npm run backend:worker:all
 ```
+
+For local development, keep three pieces available: the frontend/backend dev processes, Redis, and the worker process.
 
 ## Verification
 
@@ -79,6 +80,6 @@ npm run backend:test
 ## Current MVP Status
 
 - Auth, refresh tokens, RBAC, products, warehouses, inventory, orders, shipments, analytics, and notifications have backend routes.
-- Logged-in ERP screens are wired to authenticated API calls instead of static mock data.
+- Logged-in ERP screens are wired to authenticated API calls.
 - Supabase PostgreSQL remains the database infrastructure; Prisma migrations and the Express API remain the application source of truth.
 - Redis is used for background-job infrastructure via `REDIS_URL`; Supabase PostgreSQL remains the active database target.

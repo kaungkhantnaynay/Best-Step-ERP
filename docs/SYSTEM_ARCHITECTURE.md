@@ -98,4 +98,4 @@ flowchart LR
   WorkerHost --> ManagedPostgres
 ```
 
-Current local development uses Supabase PostgreSQL and Upstash-compatible Redis connection strings through environment variables. Production deployment is still planned separately.
+Current local development uses Supabase PostgreSQL and Redis connection strings through environment variables. Production deployment should follow the environment, worker, Supabase, and Redis checklist in [Production readiness](PRODUCTION_READINESS.md).
