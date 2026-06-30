@@ -1,6 +1,7 @@
 import { OrderStatus, Prisma, ProductStatus, StockMovementType } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
 import { recordAuditLog } from "./audit.service.js";
+import { queueNotification } from "./notification.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -37,6 +38,11 @@ const includeOrderRelations = {
 } satisfies Prisma.OrderInclude;
 
 type OrderRecord = Prisma.OrderGetPayload<{ include: typeof includeOrderRelations }>;
+type NotificationInput = {
+  organizationId: string;
+  title: string;
+  body: string;
+};
 type OrderTransaction = Omit<
   typeof prisma,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
@@ -288,7 +294,7 @@ export async function getOrder(organizationId: string, orderId: string) {
 }
 
 export async function createOrder(organizationId: string, input: OrderCreateInput, userId?: string) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const productIds = [...new Set(input.items.map((item) => item.productId))];
     const products = await getActiveProducts(tx, organizationId, productIds);
     const orderItems = input.items.map((item) => {
@@ -342,8 +348,19 @@ export async function createOrder(organizationId: string, input: OrderCreateInpu
       tx,
     );
 
-    return toOrderResponse(await getTenantOrder(tx, organizationId, order.id));
+    const response = toOrderResponse(await getTenantOrder(tx, organizationId, order.id));
+    const notification: NotificationInput = {
+      organizationId,
+      title: `Order reserved: ${order.orderNumber}`,
+      body: `${order.customerName}'s order was created and inventory was reserved.`,
+    };
+
+    return { order: response, notification };
   });
+
+  await queueNotification(result.notification);
+
+  return result.order;
 }
 
 export async function updateOrderStatus(
@@ -352,7 +369,7 @@ export async function updateOrderStatus(
   input: OrderStatusUpdateInput,
   userId?: string,
 ) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await getTenantOrder(tx, organizationId, orderId);
     assertStatusTransition(order.status, input.status);
 
@@ -388,12 +405,22 @@ export async function updateOrderStatus(
       tx,
     );
 
-    return toOrderResponse(updated);
+    const notification: NotificationInput = {
+      organizationId,
+      title: `Order status: ${order.orderNumber}`,
+      body: `Order status changed from ${order.status} to ${input.status}.`,
+    };
+
+    return { order: toOrderResponse(updated), notification };
   });
+
+  await queueNotification(result.notification);
+
+  return result.order;
 }
 
 export async function cancelOrder(organizationId: string, orderId: string, userId?: string) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await getTenantOrder(tx, organizationId, orderId);
     assertStatusTransition(order.status, OrderStatus.CANCELLED);
 
@@ -421,6 +448,16 @@ export async function cancelOrder(organizationId: string, orderId: string, userI
       tx,
     );
 
-    return toOrderResponse(updated);
+    const notification: NotificationInput = {
+      organizationId,
+      title: `Order cancelled: ${order.orderNumber}`,
+      body: `Order ${order.orderNumber} was cancelled and reserved inventory was released when applicable.`,
+    };
+
+    return { order: toOrderResponse(updated), notification };
   });
+
+  await queueNotification(result.notification);
+
+  return result.order;
 }

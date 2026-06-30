@@ -7,7 +7,7 @@ Best Step is a full-stack logistics ERP SaaS project focused on inventory manage
 - Frontend: Next.js, TypeScript, Tailwind CSS, ShadCN UI, Recharts
 - Backend: Node.js, Express, TypeScript, PostgreSQL, Prisma
 - Auth: JWT, refresh tokens, RBAC
-- Infrastructure: Redis, BullMQ, Docker, Swagger/OpenAPI
+- Infrastructure: Redis, BullMQ, Swagger/OpenAPI
 
 ## Repository Structure
 
@@ -55,7 +55,7 @@ Or run each process separately:
 ```bash
 npm run frontend:dev
 npm run backend:dev
-npm run backend:worker:auth
+npm run backend:worker:all
 ```
 
 ## Verification

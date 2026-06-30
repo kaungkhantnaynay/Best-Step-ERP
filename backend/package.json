@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "worker:auth": "tsx watch src/jobs/auth-maintenance.processor.ts",
+    "worker:all": "tsx watch src/jobs/worker.ts",
+    "worker:email": "tsx watch src/jobs/email.processor.ts",
+    "worker:notifications": "tsx watch src/jobs/notification.processor.ts",
+    "worker:reports": "tsx watch src/jobs/report.processor.ts",
     "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",

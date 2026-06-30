@@ -592,6 +592,21 @@ export const openApiDocument = {
           },
         },
       },
+      ReportQueuedResponse: {
+        type: "object",
+        required: ["data"],
+        properties: {
+          data: {
+            type: "object",
+            required: ["jobId", "reportType", "status"],
+            properties: {
+              jobId: { type: "string" },
+              reportType: { type: "string", enum: ["dashboard-summary"] },
+              status: { type: "string", enum: ["queued"] },
+            },
+          },
+        },
+      },
       Notification: {
         type: "object",
         required: ["id", "title", "body", "readAt", "createdAt"],
@@ -1455,6 +1470,20 @@ export const openApiDocument = {
           "200": {
             description: "Tenant-scoped dashboard analytics",
             content: { "application/json": { schema: { $ref: "#/components/schemas/DashboardAnalyticsResponse" } } },
+          },
+          "401": { description: "Authentication required" },
+          "403": { description: "analytics.read permission required" },
+        },
+      },
+    },
+    "/api/v1/analytics/reports/dashboard": {
+      post: {
+        summary: "Queue dashboard summary report generation",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "202": {
+            description: "Dashboard summary report job queued",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ReportQueuedResponse" } } },
           },
           "401": { description: "Authentication required" },
           "403": { description: "analytics.read permission required" },

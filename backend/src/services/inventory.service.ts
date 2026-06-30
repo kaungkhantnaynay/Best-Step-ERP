@@ -1,6 +1,7 @@
 import { Prisma, ProductStatus, StockMovementType } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
 import { recordAuditLog } from "./audit.service.js";
+import { queueNotification } from "./notification.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -33,6 +34,11 @@ const includeMovementRelations = {
 
 type InventoryRecord = Prisma.InventoryGetPayload<{ include: typeof includeInventoryRelations }>;
 type StockMovementRecord = Prisma.StockMovementGetPayload<{ include: typeof includeMovementRelations }>;
+type NotificationInput = {
+  organizationId: string;
+  title: string;
+  body: string;
+};
 type InventoryTransaction = Omit<
   typeof prisma,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
@@ -179,26 +185,21 @@ async function getProductTotalQuantity(tx: InventoryTransaction, productId: stri
   return result._sum.quantity ?? 0;
 }
 
-async function maybeCreateLowStockNotification(
-  tx: InventoryTransaction,
-  input: {
+function buildLowStockNotification(input: {
     organizationId: string;
     productName: string;
     productSku: string;
     beforeTotal: number;
     afterTotal: number;
     reorderLevel: number;
-  },
-) {
-  if (input.beforeTotal <= input.reorderLevel || input.afterTotal > input.reorderLevel) return;
+  }): NotificationInput | null {
+  if (input.beforeTotal <= input.reorderLevel || input.afterTotal > input.reorderLevel) return null;
 
-  await tx.notification.create({
-    data: {
-      organizationId: input.organizationId,
-      title: `Low stock: ${input.productName}`,
-      body: `${input.productSku} is at ${input.afterTotal} units, at or below the reorder level of ${input.reorderLevel}.`,
-    },
-  });
+  return {
+    organizationId: input.organizationId,
+    title: `Low stock: ${input.productName}`,
+    body: `${input.productSku} is at ${input.afterTotal} units, at or below the reorder level of ${input.reorderLevel}.`,
+  };
 }
 
 async function getInventoryRow(tx: InventoryTransaction, productId: string, binId: string) {
@@ -242,7 +243,7 @@ export async function listInventory(organizationId: string, query: InventoryList
 }
 
 export async function stockIn(organizationId: string, input: StockMutationInput, userId?: string) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const product = await getActiveProduct(tx, organizationId, input.productId);
     const bin = await getTenantBin(tx, organizationId, input.binId);
     const beforeTotal = await getProductTotalQuantity(tx, input.productId);
@@ -280,7 +281,7 @@ export async function stockIn(organizationId: string, input: StockMutationInput,
     );
 
     const afterTotal = await getProductTotalQuantity(tx, input.productId);
-    await maybeCreateLowStockNotification(tx, {
+    const notification = buildLowStockNotification({
       organizationId,
       productName: product.name,
       productSku: product.sku,
@@ -289,12 +290,19 @@ export async function stockIn(organizationId: string, input: StockMutationInput,
       reorderLevel: product.reorderLevel,
     });
 
-    return toInventoryResponse(await getInventoryRow(tx, input.productId, input.binId));
+    return {
+      inventory: toInventoryResponse(await getInventoryRow(tx, input.productId, input.binId)),
+      notification,
+    };
   });
+
+  if (result.notification) await queueNotification(result.notification);
+
+  return result.inventory;
 }
 
 export async function stockOut(organizationId: string, input: StockMutationInput, userId?: string) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const product = await getActiveProduct(tx, organizationId, input.productId);
     const bin = await getTenantBin(tx, organizationId, input.binId);
     const currentInventory = await tx.inventory.findUnique({
@@ -339,7 +347,7 @@ export async function stockOut(organizationId: string, input: StockMutationInput
     );
 
     const afterTotal = await getProductTotalQuantity(tx, input.productId);
-    await maybeCreateLowStockNotification(tx, {
+    const notification = buildLowStockNotification({
       organizationId,
       productName: product.name,
       productSku: product.sku,
@@ -348,8 +356,15 @@ export async function stockOut(organizationId: string, input: StockMutationInput
       reorderLevel: product.reorderLevel,
     });
 
-    return toInventoryResponse(await getInventoryRow(tx, input.productId, input.binId));
+    return {
+      inventory: toInventoryResponse(await getInventoryRow(tx, input.productId, input.binId)),
+      notification,
+    };
   });
+
+  if (result.notification) await queueNotification(result.notification);
+
+  return result.inventory;
 }
 
 export async function listStockMovements(organizationId: string, query: StockMovementListQuery) {

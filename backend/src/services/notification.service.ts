@@ -1,5 +1,8 @@
+import type { Prisma } from "@prisma/client";
+import { enqueueNotificationJob, type NotificationJobData } from "../jobs/queues.js";
 import { prisma } from "../prisma/client.js";
 import { AppError } from "../utils/app-error.js";
+import { logger } from "../utils/logger.js";
 import { parsePagePagination } from "../utils/pagination.js";
 
 type NotificationListQuery = {
@@ -22,6 +25,31 @@ function toNotificationResponse(row: {
     readAt: row.readAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+export async function createNotification(
+  input: NotificationJobData,
+  tx: Prisma.TransactionClient = prisma,
+) {
+  return tx.notification.create({
+    data: {
+      organizationId: input.organizationId,
+      title: input.title,
+      body: input.body,
+    },
+  });
+}
+
+export async function queueNotification(input: NotificationJobData) {
+  try {
+    return await enqueueNotificationJob(input);
+  } catch (error) {
+    logger.warn({ err: error, organizationId: input.organizationId }, "Failed to enqueue notification job");
+
+    await createNotification(input);
+
+    return null;
+  }
 }
 
 export async function listNotifications(organizationId: string, query: NotificationListQuery) {

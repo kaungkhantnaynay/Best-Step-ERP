@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getDashboardAnalyticsController } from "../controllers/analytics.controller.js";
+import {
+  enqueueDashboardReportController,
+  getDashboardAnalyticsController,
+} from "../controllers/analytics.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 
@@ -11,4 +14,10 @@ analyticsRouter.get(
   "/analytics/dashboard",
   requirePermission("analytics.read"),
   getDashboardAnalyticsController,
+);
+
+analyticsRouter.post(
+  "/analytics/reports/dashboard",
+  requirePermission("analytics.read"),
+  enqueueDashboardReportController,
 );

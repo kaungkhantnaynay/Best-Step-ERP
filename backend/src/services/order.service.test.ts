@@ -1,6 +1,7 @@
 import { OrderStatus, ProductStatus, StockMovementType } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../prisma/client.js";
+import { queueNotification } from "./notification.service.js";
 import {
   cancelOrder,
   createOrder,
@@ -41,6 +42,10 @@ vi.mock("../prisma/client.js", () => ({
   })(),
 }));
 
+vi.mock("./notification.service.js", () => ({
+  queueNotification: vi.fn(),
+}));
+
 const mockedOrderCount = vi.mocked(prisma.order.count);
 const mockedOrderCreate = vi.mocked(prisma.order.create);
 const mockedOrderFindFirst = vi.mocked(prisma.order.findFirst);
@@ -52,6 +57,7 @@ const mockedInventoryFindMany = vi.mocked(prisma.inventory.findMany);
 const mockedInventoryUpdate = vi.mocked(prisma.inventory.update);
 const mockedStockMovementCreate = vi.mocked(prisma.stockMovement.create);
 const mockedStockMovementFindMany = vi.mocked(prisma.stockMovement.findMany);
+const mockedQueueNotification = vi.mocked(queueNotification);
 
 function decimal(value: number) {
   return { toNumber: () => value };
@@ -195,6 +201,9 @@ describe("order service", () => {
         }),
       }),
     );
+    expect(mockedQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: "org-1", title: "Order reserved: SO-1001" }),
+    );
   });
 
   it("rejects order creation when stock is insufficient", async () => {
@@ -226,6 +235,9 @@ describe("order service", () => {
     expect(mockedOrderUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: OrderStatus.FULFILLED } }),
     );
+    expect(mockedQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: "org-1", title: "Order status: SO-1001" }),
+    );
   });
 
   it("rejects invalid status transitions", async () => {
@@ -251,6 +263,9 @@ describe("order service", () => {
     );
     expect(mockedStockMovementCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ type: StockMovementType.RELEASE }) }),
+    );
+    expect(mockedQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: "org-1", title: "Order cancelled: SO-1001" }),
     );
   });
 });

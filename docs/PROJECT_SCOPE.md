@@ -13,7 +13,7 @@
 - Analytics dashboard with Recharts.
 - Notifications and audit logs.
 - Redis and BullMQ background jobs.
-- Docker-based local development.
+- Local development through npm scripts, Supabase PostgreSQL connection strings, and a separately managed Redis instance.
 - Swagger/OpenAPI documentation.
 
 ## Out of Scope for Initial V1

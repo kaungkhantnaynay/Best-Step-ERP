@@ -1,6 +1,7 @@
 import { OrderStatus, Prisma, ShipmentStatus } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
 import { recordAuditLog } from "./audit.service.js";
+import { queueNotification } from "./notification.service.js";
 import { AppError } from "../utils/app-error.js";
 import { parsePagePagination } from "../utils/pagination.js";
 import type {
@@ -27,6 +28,11 @@ const includeShipmentRelations = {
 } satisfies Prisma.ShipmentInclude;
 
 type ShipmentRecord = Prisma.ShipmentGetPayload<{ include: typeof includeShipmentRelations }>;
+type NotificationInput = {
+  organizationId: string;
+  title: string;
+  body: string;
+};
 type ShipmentTransaction = Omit<
   typeof prisma,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
@@ -133,21 +139,16 @@ async function createTrackingEvent(
   });
 }
 
-async function createShipmentNotification(
-  tx: ShipmentTransaction,
-  input: {
+function buildShipmentNotification(input: {
     organizationId: string;
     orderNumber: string;
     status: string;
-  },
-) {
-  await tx.notification.create({
-    data: {
-      organizationId: input.organizationId,
-      title: `Shipment update: ${input.orderNumber}`,
-      body: `Shipment status changed to ${input.status}.`,
-    },
-  });
+  }): NotificationInput {
+  return {
+    organizationId: input.organizationId,
+    title: `Shipment update: ${input.orderNumber}`,
+    body: `Shipment status changed to ${input.status}.`,
+  };
 }
 
 export async function listShipments(organizationId: string, query: ShipmentListQuery) {
@@ -180,7 +181,7 @@ export async function getShipment(organizationId: string, shipmentId: string) {
 }
 
 export async function createShipment(organizationId: string, input: ShipmentCreateInput, userId?: string) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await getTenantOrder(tx, organizationId, input.orderId);
     const status = input.carrier ? ShipmentStatus.ASSIGNED : ShipmentStatus.PENDING;
     const shipment = await tx.shipment.create({
@@ -199,7 +200,7 @@ export async function createShipment(organizationId: string, input: ShipmentCrea
       status,
       note: input.carrier ? `Assigned to ${input.carrier}.` : "Shipment created.",
     });
-    await createShipmentNotification(tx, {
+    const notification = buildShipmentNotification({
       organizationId,
       orderNumber: order.orderNumber,
       status,
@@ -222,8 +223,15 @@ export async function createShipment(organizationId: string, input: ShipmentCrea
       tx,
     );
 
-    return toShipmentResponse(await getTenantShipment(tx, organizationId, shipment.id));
+    return {
+      shipment: toShipmentResponse(await getTenantShipment(tx, organizationId, shipment.id)),
+      notification,
+    };
   });
+
+  await queueNotification(result.notification);
+
+  return result.shipment;
 }
 
 export async function assignShipment(
@@ -232,7 +240,7 @@ export async function assignShipment(
   input: ShipmentAssignInput,
   userId?: string,
 ) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const shipment = await getTenantShipment(tx, organizationId, shipmentId);
     if (shipment.status === ShipmentStatus.DELIVERED || shipment.status === ShipmentStatus.CANCELLED) {
       throw new AppError(409, "SHIPMENT_CLOSED", "Delivered or cancelled shipments cannot be assigned");
@@ -254,7 +262,7 @@ export async function assignShipment(
       status: nextStatus,
       note: `Assigned to ${input.carrier}.`,
     });
-    await createShipmentNotification(tx, {
+    const notification = buildShipmentNotification({
       organizationId,
       orderNumber: shipment.order.orderNumber,
       status: nextStatus,
@@ -271,8 +279,12 @@ export async function assignShipment(
       tx,
     );
 
-    return toShipmentResponse(updated);
+    return { shipment: toShipmentResponse(updated), notification };
   });
+
+  await queueNotification(result.notification);
+
+  return result.shipment;
 }
 
 export async function updateShipmentStatus(
@@ -281,7 +293,7 @@ export async function updateShipmentStatus(
   input: ShipmentStatusUpdateInput,
   userId?: string,
 ) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const shipment = await getTenantShipment(tx, organizationId, shipmentId);
     assertStatusTransition(shipment.status, input.status);
 
@@ -296,7 +308,7 @@ export async function updateShipmentStatus(
       location: input.location,
       note: input.note,
     });
-    await createShipmentNotification(tx, {
+    const notification = buildShipmentNotification({
       organizationId,
       orderNumber: shipment.order.orderNumber,
       status: input.status,
@@ -320,8 +332,12 @@ export async function updateShipmentStatus(
       tx,
     );
 
-    return toShipmentResponse(updated);
+    return { shipment: toShipmentResponse(updated), notification };
   });
+
+  await queueNotification(result.notification);
+
+  return result.shipment;
 }
 
 export async function addTrackingEvent(
@@ -330,7 +346,7 @@ export async function addTrackingEvent(
   input: TrackingEventCreateInput,
   userId?: string,
 ) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const shipment = await getTenantShipment(tx, organizationId, shipmentId);
     await createTrackingEvent(tx, {
       shipmentId,
@@ -338,7 +354,7 @@ export async function addTrackingEvent(
       location: input.location,
       note: input.note,
     });
-    await createShipmentNotification(tx, {
+    const notification = buildShipmentNotification({
       organizationId,
       orderNumber: shipment.order.orderNumber,
       status: input.status,
@@ -355,6 +371,13 @@ export async function addTrackingEvent(
       tx,
     );
 
-    return toShipmentResponse(await getTenantShipment(tx, organizationId, shipmentId));
+    return {
+      shipment: toShipmentResponse(await getTenantShipment(tx, organizationId, shipmentId)),
+      notification,
+    };
   });
+
+  await queueNotification(result.notification);
+
+  return result.shipment;
 }

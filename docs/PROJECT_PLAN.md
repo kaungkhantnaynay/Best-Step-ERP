@@ -8,7 +8,7 @@ Best Step is a logistics ERP SaaS platform for inventory, warehouse operations, 
 
 - Convert the starter Next.js project into a monorepo with `frontend/`, `backend/`, and `docs/`.
 - Keep frontend implementation in `frontend/` using Next.js, TypeScript, Tailwind, ShadCN UI, and Recharts.
-- Keep backend implementation in `backend/` using Express, TypeScript, PostgreSQL, Prisma, JWT/RBAC, Redis, BullMQ, Docker, and Swagger.
+- Keep backend implementation in `backend/` using Express, TypeScript, PostgreSQL, Prisma, JWT/RBAC, Redis, BullMQ, and Swagger.
 - Maintain project documentation in `docs/`: scope, database schema, API routes, and system architecture.
 - Configure shared repo scripts from the root workspace.
 
@@ -84,12 +84,11 @@ Best Step is a logistics ERP SaaS platform for inventory, warehouse operations, 
 - Audit logs: track entity changes and user actions.
 - Notifications: low stock alerts, shipment updates, and order alerts.
 - Background jobs: Redis + BullMQ for email jobs, notification jobs, and report generation.
-- Real-time features: Socket.io for live notifications and dashboard updates.
 
 ## Phase 12: DevOps and API Documentation
 
-- Dockerize frontend, backend, PostgreSQL, and Redis.
-- Add `docker-compose.yml` for local development.
+- Keep local development runnable through npm workspace scripts, Supabase PostgreSQL connection strings, and a separately managed Redis instance.
+- Document environment setup for frontend, backend, workers, Supabase PostgreSQL, and Redis.
 - Add GitHub Actions for lint, typecheck, tests, and build.
 - Document all backend APIs with Swagger/OpenAPI.
 

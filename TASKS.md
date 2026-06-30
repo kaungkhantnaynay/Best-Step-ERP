@@ -12,7 +12,7 @@ Tech Stack:
 - Backend: Node.js + Express + TypeScript
 - Database: Supabase-hosted PostgreSQL + Prisma
 - Auth: JWT + RBAC
-- Extra: Redis + BullMQ + Docker
+- Extra: Redis + BullMQ
 
 ---
 
@@ -261,27 +261,17 @@ Tech Stack:
 ## Notifications
 - [x] Low stock notification
 - [x] Shipment updates
-- [ ] Order alerts
+- [x] Order alerts
 
 ## Background Jobs
 - [x] Setup Redis
 - [x] Setup BullMQ
-- [ ] Queue email jobs
-- [ ] Queue report generation
-
-## Real-Time Features
-- [ ] Setup Socket.io
-- [ ] Live notifications
-- [ ] Real-time dashboard updates
+- [x] Queue email jobs
+- [x] Queue report generation
 
 ---
 
 # PHASE 12 — DevOps
-
-## Docker
-- [ ] Dockerize backend
-- [ ] Dockerize frontend
-- [x] Create docker-compose
 
 ## CI/CD
 - [x] Setup GitHub Actions

@@ -14,7 +14,7 @@
 - Frontend: Next.js, TypeScript, Tailwind CSS, ShadCN UI, and Recharts.
 - Backend: Node.js, Express, TypeScript, PostgreSQL hosted on Supabase, and Prisma.
 - Auth: JWT access tokens, refresh tokens, and RBAC.
-- Jobs and infrastructure: Redis, BullMQ, Docker, and Swagger/OpenAPI.
+- Jobs and infrastructure: Redis, BullMQ, and Swagger/OpenAPI.
 
 ## Frontend Rules
 
@@ -140,13 +140,12 @@
 - Clean up expired and revoked refresh tokens through a scheduled job.
 - Rate-limit refresh attempts and log failed refresh, reuse detection, and revocation events.
 
-## Jobs and Realtime Rules
+## Jobs Rules
 
 - Use Redis with BullMQ for background work.
 - Use jobs for email, low-stock alerts, shipment updates, report generation, and other slow or retryable work.
 - Keep job producers close to the service action that emits the business event.
 - Keep job processors idempotent where practical.
-- Socket.io or realtime updates should publish tenant-scoped events only.
 
 ## Swagger and Documentation Rules
 
@@ -156,12 +155,12 @@
 - Keep route inventory reflected in `docs/API_ROUTES.md`.
 - Mermaid is the official diagram format for this project.
 
-## Environment and Docker Rules
+## Environment Rules
 
 - Do not commit real secrets.
 - Use `.env.example` files to document required variables.
 - Expected backend variables include Supabase PostgreSQL database URL, optional direct and pooled database URLs, JWT secrets, refresh token secret, Redis URL, CORS origin, and port.
-- Docker Compose should eventually run frontend, backend, Redis, and worker processes for local development; a local PostgreSQL container is optional when Supabase is the active database target.
+- Local development should run through npm workspace scripts, Supabase PostgreSQL connection strings, and a separately managed Redis instance.
 
 ## Testing and Verification
 

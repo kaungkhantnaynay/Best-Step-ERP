@@ -1,6 +1,7 @@
 import { OrderStatus, ShipmentStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../prisma/client.js";
+import { queueNotification } from "./notification.service.js";
 import {
   addTrackingEvent,
   assignShipment,
@@ -40,6 +41,10 @@ vi.mock("../prisma/client.js", () => ({
   })(),
 }));
 
+vi.mock("./notification.service.js", () => ({
+  queueNotification: vi.fn(),
+}));
+
 const mockedOrderFindFirst = vi.mocked(prisma.order.findFirst);
 const mockedOrderUpdate = vi.mocked(prisma.order.update);
 const mockedShipmentCount = vi.mocked(prisma.shipment.count);
@@ -48,7 +53,7 @@ const mockedShipmentFindFirst = vi.mocked(prisma.shipment.findFirst);
 const mockedShipmentFindMany = vi.mocked(prisma.shipment.findMany);
 const mockedShipmentUpdate = vi.mocked(prisma.shipment.update);
 const mockedTrackingHistoryCreate = vi.mocked(prisma.trackingHistory.create);
-const mockedNotificationCreate = vi.mocked(prisma.notification.create);
+const mockedQueueNotification = vi.mocked(queueNotification);
 
 function decimal(value: number) {
   return { toNumber: () => value };
@@ -126,7 +131,7 @@ describe("shipment service", () => {
     );
   });
 
-  it("creates a shipment and records the initial event and notification", async () => {
+  it("creates a shipment and records the initial event and queues a notification", async () => {
     mockedOrderFindFirst.mockResolvedValue(order() as never);
     mockedShipmentCreate.mockResolvedValue(shipment() as never);
     mockedShipmentFindFirst.mockResolvedValue(shipment() as never);
@@ -144,8 +149,8 @@ describe("shipment service", () => {
     expect(mockedTrackingHistoryCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: ShipmentStatus.ASSIGNED }) }),
     );
-    expect(mockedNotificationCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ title: "Shipment update: SO-1001" }) }),
+    expect(mockedQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: "org-1", title: "Shipment update: SO-1001" }),
     );
   });
 

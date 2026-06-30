@@ -1,6 +1,7 @@
 import { ProductStatus, StockMovementType } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../prisma/client.js";
+import { queueNotification } from "./notification.service.js";
 import {
   listInventory,
   listStockMovements,
@@ -39,6 +40,10 @@ vi.mock("../prisma/client.js", () => ({
   })(),
 }));
 
+vi.mock("./notification.service.js", () => ({
+  queueNotification: vi.fn(),
+}));
+
 const mockedProductFindFirst = vi.mocked(prisma.product.findFirst);
 const mockedWarehouseBinFindFirst = vi.mocked(prisma.warehouseBin.findFirst);
 const mockedInventoryAggregate = vi.mocked(prisma.inventory.aggregate);
@@ -50,7 +55,7 @@ const mockedInventoryUpsert = vi.mocked(prisma.inventory.upsert);
 const mockedStockMovementCount = vi.mocked(prisma.stockMovement.count);
 const mockedStockMovementCreate = vi.mocked(prisma.stockMovement.create);
 const mockedStockMovementFindMany = vi.mocked(prisma.stockMovement.findMany);
-const mockedNotificationCreate = vi.mocked(prisma.notification.create);
+const mockedQueueNotification = vi.mocked(queueNotification);
 
 function decimal(value: number) {
   return { toNumber: () => value };
@@ -206,7 +211,7 @@ describe("inventory service", () => {
     );
   });
 
-  it("removes stock and creates a low-stock notification when crossing the reorder level", async () => {
+  it("removes stock and queues a low-stock notification when crossing the reorder level", async () => {
     mockedProductFindFirst.mockResolvedValue({ id: "product-1", name: "Trail Runner Sole Kit", sku: "BS-SOLE-001", reorderLevel: 10 } as never);
     mockedWarehouseBinFindFirst.mockResolvedValue(bin() as never);
     mockedInventoryFindUnique
@@ -229,10 +234,8 @@ describe("inventory service", () => {
         data: expect.objectContaining({ type: StockMovementType.STOCK_OUT, quantity: 3 }),
       }),
     );
-    expect(mockedNotificationCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ organizationId: "org-1", title: "Low stock: Trail Runner Sole Kit" }),
-      }),
+    expect(mockedQueueNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: "org-1", title: "Low stock: Trail Runner Sole Kit" }),
     );
   });
 
