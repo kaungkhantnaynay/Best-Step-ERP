@@ -194,7 +194,6 @@ export default function SettingsPage() {
             </div>
             <div className="mt-4 space-y-4">
               <TagGroup label="Roles" values={user?.roles ?? []} empty="No roles assigned." />
-              <TagGroup label="Permissions" values={user?.permissions ?? []} empty="No permissions assigned." />
             </div>
           </div>
         </section>

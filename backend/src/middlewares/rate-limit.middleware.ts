@@ -105,6 +105,24 @@ function defaultKeyGenerator(request: Request) {
   return `${tenantPart}:${userPart}`;
 }
 
+export const authenticatedRateLimit = rateLimit({
+  name: "authenticated-api",
+  windowMs: env.AUTHENTICATED_RATE_LIMIT_WINDOW_MS,
+  maxRequests: env.AUTHENTICATED_RATE_LIMIT_MAX_REQUESTS,
+});
+
+export const sensitiveMutationRateLimit = rateLimit({
+  name: "sensitive-mutation",
+  windowMs: env.SENSITIVE_MUTATION_RATE_LIMIT_WINDOW_MS,
+  maxRequests: env.SENSITIVE_MUTATION_RATE_LIMIT_MAX_REQUESTS,
+});
+
+export const reportGenerationRateLimit = rateLimit({
+  name: "report-generation",
+  windowMs: env.REPORT_RATE_LIMIT_WINDOW_MS,
+  maxRequests: env.REPORT_RATE_LIMIT_MAX_REQUESTS,
+});
+
 export function rateLimit(options: RateLimitOptions): RequestHandler {
   const windowMs = options.windowMs ?? env.RATE_LIMIT_WINDOW_MS;
   const maxRequests = options.maxRequests ?? env.RATE_LIMIT_MAX_REQUESTS;

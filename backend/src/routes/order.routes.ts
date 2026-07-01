@@ -7,6 +7,10 @@ import {
   updateOrderStatusController,
 } from "../controllers/order.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import {
+  authenticatedRateLimit,
+  sensitiveMutationRateLimit,
+} from "../middlewares/rate-limit.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import {
@@ -18,7 +22,7 @@ import {
 
 export const orderRouter = Router();
 
-orderRouter.use(requireAuth);
+orderRouter.use(requireAuth, authenticatedRateLimit);
 
 orderRouter.get(
   "/orders",
@@ -29,6 +33,7 @@ orderRouter.get(
 orderRouter.post(
   "/orders",
   requirePermission("orders.write"),
+  sensitiveMutationRateLimit,
   validateRequest({ body: orderCreateSchema }),
   createOrderController,
 );
@@ -41,12 +46,14 @@ orderRouter.get(
 orderRouter.patch(
   "/orders/:id/status",
   requirePermission("orders.write"),
+  sensitiveMutationRateLimit,
   validateRequest({ params: orderIdParamsSchema, body: orderStatusUpdateSchema }),
   updateOrderStatusController,
 );
 orderRouter.post(
   "/orders/:id/cancel",
   requirePermission("orders.write"),
+  sensitiveMutationRateLimit,
   validateRequest({ params: orderIdParamsSchema }),
   cancelOrderController,
 );

@@ -6,6 +6,10 @@ import {
   stockOutController,
 } from "../controllers/inventory.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import {
+  authenticatedRateLimit,
+  sensitiveMutationRateLimit,
+} from "../middlewares/rate-limit.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import {
@@ -16,7 +20,7 @@ import {
 
 export const inventoryRouter = Router();
 
-inventoryRouter.use(requireAuth);
+inventoryRouter.use(requireAuth, authenticatedRateLimit);
 
 inventoryRouter.get(
   "/inventory",
@@ -27,12 +31,14 @@ inventoryRouter.get(
 inventoryRouter.post(
   "/inventory/stock-in",
   requirePermission("inventory.write"),
+  sensitiveMutationRateLimit,
   validateRequest({ body: stockMutationSchema }),
   stockInController,
 );
 inventoryRouter.post(
   "/inventory/stock-out",
   requirePermission("inventory.write"),
+  sensitiveMutationRateLimit,
   validateRequest({ body: stockMutationSchema }),
   stockOutController,
 );

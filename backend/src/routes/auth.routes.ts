@@ -9,7 +9,10 @@ import {
 } from "../controllers/auth.controller.js";
 import { env } from "../config/env.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { rateLimit } from "../middlewares/rate-limit.middleware.js";
+import {
+  authenticatedRateLimit,
+  rateLimit,
+} from "../middlewares/rate-limit.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import { loginSchema, registerSchema } from "../validators/auth.validators.js";
 
@@ -57,5 +60,5 @@ authRouter.post(
 );
 
 authRouter.post("/logout", logoutUser);
-authRouter.post("/logout-all", requireAuth, logoutAllUserSessions);
-authRouter.get("/me", requireAuth, me);
+authRouter.post("/logout-all", requireAuth, authenticatedRateLimit, logoutAllUserSessions);
+authRouter.get("/me", requireAuth, authenticatedRateLimit, me);

@@ -8,6 +8,7 @@ import {
   updateShipmentStatusController,
 } from "../controllers/shipment.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { authenticatedRateLimit } from "../middlewares/rate-limit.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import {
@@ -21,7 +22,7 @@ import {
 
 export const shipmentRouter = Router();
 
-shipmentRouter.use(requireAuth);
+shipmentRouter.use(requireAuth, authenticatedRateLimit);
 
 shipmentRouter.get(
   "/shipments",

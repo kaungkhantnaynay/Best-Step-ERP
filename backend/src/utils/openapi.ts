@@ -4,6 +4,23 @@ export const openApiDocument = {
     title: "Best Step ERP API",
     version: "0.1.0",
   },
+  "x-rateLimits": {
+    authenticatedApi: {
+      description: "Authenticated API routes are rate limited per organization and user.",
+      windowMsEnv: "AUTHENTICATED_RATE_LIMIT_WINDOW_MS",
+      maxRequestsEnv: "AUTHENTICATED_RATE_LIMIT_MAX_REQUESTS",
+    },
+    sensitiveMutations: {
+      description: "Sensitive authenticated mutations have an additional stricter limit.",
+      windowMsEnv: "SENSITIVE_MUTATION_RATE_LIMIT_WINDOW_MS",
+      maxRequestsEnv: "SENSITIVE_MUTATION_RATE_LIMIT_MAX_REQUESTS",
+    },
+    reportGeneration: {
+      description: "Report generation routes have an additional stricter limit.",
+      windowMsEnv: "REPORT_RATE_LIMIT_WINDOW_MS",
+      maxRequestsEnv: "REPORT_RATE_LIMIT_MAX_REQUESTS",
+    },
+  },
   components: {
     securitySchemes: {
       bearerAuth: {

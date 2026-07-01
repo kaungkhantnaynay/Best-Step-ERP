@@ -24,6 +24,13 @@ Auth rate limits:
 - `POST /auth/refresh`: `AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS` per `AUTH_RATE_LIMIT_WINDOW_MS`.
 - Auth rate limit errors return `429 RATE_LIMITED` with `details.retryAfter`.
 
+Authenticated API rate limits:
+
+- Tenant-owned authenticated routes are limited by `AUTHENTICATED_RATE_LIMIT_MAX_REQUESTS` per `AUTHENTICATED_RATE_LIMIT_WINDOW_MS`, keyed by organization and user.
+- Sensitive authenticated mutations are additionally limited by `SENSITIVE_MUTATION_RATE_LIMIT_MAX_REQUESTS` per `SENSITIVE_MUTATION_RATE_LIMIT_WINDOW_MS`.
+- Dashboard report generation is additionally limited by `REPORT_RATE_LIMIT_MAX_REQUESTS` per `REPORT_RATE_LIMIT_WINDOW_MS`.
+- Rate limit errors return `429 RATE_LIMITED` with `details.retryAfter` and `RateLimit-*` headers.
+
 ## Users
 
 - `POST /users/admin`: create an admin user in the authenticated organization. Requires `users.admin.create`.

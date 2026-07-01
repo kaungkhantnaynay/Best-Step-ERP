@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { listAuditLogsController } from "../controllers/audit.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { authenticatedRateLimit } from "../middlewares/rate-limit.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import { auditLogListQuerySchema } from "../validators/audit.validators.js";
 
 export const auditRouter = Router();
 
-auditRouter.use(requireAuth);
+auditRouter.use(requireAuth, authenticatedRateLimit);
 
 auditRouter.get(
   "/audit-logs",

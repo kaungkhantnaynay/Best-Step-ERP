@@ -4,6 +4,7 @@ import {
   markNotificationReadController,
 } from "../controllers/notification.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { authenticatedRateLimit } from "../middlewares/rate-limit.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import {
@@ -13,7 +14,7 @@ import {
 
 export const notificationRouter = Router();
 
-notificationRouter.use(requireAuth);
+notificationRouter.use(requireAuth, authenticatedRateLimit);
 
 notificationRouter.get(
   "/notifications",

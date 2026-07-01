@@ -9,6 +9,7 @@ import {
   updateProductController,
 } from "../controllers/product.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { authenticatedRateLimit } from "../middlewares/rate-limit.middleware.js";
 import { requirePermission } from "../middlewares/rbac.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import {
@@ -21,7 +22,7 @@ import {
 
 export const productRouter = Router();
 
-productRouter.use(requireAuth);
+productRouter.use(requireAuth, authenticatedRateLimit);
 
 productRouter.get(
   "/products",
