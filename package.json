@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "npm run dev --workspace frontend",
     "dev:all": "npm run backend:dev & npm run frontend:dev",
-    "postinstall": "npm run backend:prisma:generate",
     "check": "npm run frontend:lint && npm run frontend:build && npm run backend:build && npm run backend:lint && npm run backend:test",
     "build": "npm run build --workspace frontend",
     "lint": "npm run lint --workspace frontend",
