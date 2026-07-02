@@ -20,15 +20,6 @@ Best Step is a full-stack logistics ERP SaaS project focused on inventory manage
 └── AGENTS.md   # Rules for future coding agents
 ```
 
-## Documentation
-
-- [Project plan](docs/PROJECT_PLAN.md)
-- [System architecture](docs/SYSTEM_ARCHITECTURE.md)
-- [Database schema plan](docs/DATABASE_SCHEMA.md)
-- [API routes plan](docs/API_ROUTES.md)
-- [Project scope](docs/PROJECT_SCOPE.md)
-- [Production readiness](docs/PRODUCTION_READINESS.md)
-
 ## Development
 
 Install dependencies from the repository root:
