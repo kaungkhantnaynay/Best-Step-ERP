@@ -74,14 +74,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-            <div className="border-t border-border p-3">
-              <div className="rounded-lg border border-border bg-background p-3">
-                <p className="text-xs font-semibold text-foreground">API-backed workspace</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Auth, RBAC, and product catalog APIs are wired.
-                </p>
-              </div>
-            </div>
           </div>
         </aside>
         <div className="min-w-0">
