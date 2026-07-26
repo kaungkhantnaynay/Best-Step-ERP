@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Best Step ERP icon">
+  <rect width="64" height="64" rx="14" fill="#f8fafc"/>
+  <rect x="7" y="7" width="50" height="50" rx="12" fill="#ffffff" stroke="#dbe5f0" stroke-width="2"/>
+  <path d="M18 27.5 32 19l14 8.5-14 8.5-14-8.5Z" fill="#1a73e8"/>
+  <path d="M18 31.5 32 40l14-8.5V45L32 53l-14-8V31.5Z" fill="#0f4c81"/>
+  <path d="M32 36v17" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20 27.5 32 35l12-7.5" fill="none" stroke="#e0f2fe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
